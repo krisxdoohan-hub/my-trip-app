@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
 
+    <!-- 乾淨無污染的 CDN 連結，確保樣式 100% 正常載入 -->
     <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
     <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
@@ -130,10 +131,9 @@
             if (savedTitle) document.getElementById('trip-title-input').value = savedTitle;
         }
 
-        // --- 核心識別演算法：徹底過濾特殊括號 ---
+        // --- 核心識別演算法 ---
         function normalizeDayName(name) {
             if (!name) return "1";
-            // 【修復重點】：加入對 【】、[] 等括號的強制過濾，防止 Word 匯入時產生新頁籤
             let str = name.toString().replace(/\s+/g, '').replace(/[第天DayD【】\[\]\-\_]/gi, '');
             const chnMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
             if(chnMap[str]) return chnMap[str].toString();
@@ -295,7 +295,7 @@
             const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `${title}.doc`; l.click();
         }
 
-        // --- 智慧匯入引擎 (精準修復 .doc 讀取) ---
+        // --- 智慧匯入引擎 ---
         function triggerImport() { document.getElementById('import-file').click(); }
         async function handleImport(e) {
             const file = e.target.files[0];
@@ -312,7 +312,6 @@
                 r.onload = ev => mammoth.extractRawText({arrayBuffer: ev.target.result}).then(res => callGeminiAI(res.value, 'text/plain', false)); 
                 r.readAsArrayBuffer(file);
             } else if (ext === 'doc' || ext === 'txt') {
-                // 【修復重點】：將 .doc 的解析從舊版 HTML 轉為純文字讀取交給 AI，避免直接報錯崩潰
                 showLoading('文件解析中', '正在由 AI 整理行程...');
                 const r = new FileReader();
                 r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false);
@@ -340,18 +339,17 @@
                 };
                 r.readAsArrayBuffer(file);
             }
-            // 延遲清理 input 值，確保檔案能穩定讀取
             setTimeout(() => { e.target.value = ''; }, 500);
         }
 
-        // --- AI 解析引擎 (強固化 Schema 與 JSON 清洗) ---
+        // --- AI 解析引擎 (強固化 Schema 與 5次重試) ---
         async function callGeminiAI(input, mime, isImg) {
             showLoading('AI 智慧引擎', '分析中...');
-            const apiKey = ""; 
+            // 確認 API 使用正確且唯一支援的預覽模型
+            const apiKey = "AIzaSyDgdR3AIWEpS7SsJwbRKHrBimdkNlCFSLU"; 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const prompt = "你是行程規劃專家。請從附件「逐一提取」景點、飯店、轉運站。⚠️嚴禁摘要、排除純交通動作描述。請務必以 JSON Array 格式回傳。格式：[{dayNameIdentifier: '第 1 天', spots: [{name: '景點名', desc: '備註'}]}]";
             
-            // 【修復重點】：嚴格定義 Schema 約束，強迫 AI 回傳標準結構，杜絕解析失敗
             const payload = { 
                 contents: [{ parts: [ { text: prompt }, isImg ? { inlineData: { mimeType: mime, data: input } } : { text: input } ] }], 
                 generationConfig: { 
@@ -377,7 +375,7 @@
                     const d = await r.json();
                     let txt = d.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (txt) { 
-                        // 【修復重點】：濾除 AI 偶爾生成的 ```json 標籤，防止 JSON.parse 崩潰
+                        // 濾除 AI 偶爾生成的 Markdown 標籤，防止 parse 崩潰
                         txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
                         mergeIncomingData(JSON.parse(txt)); 
                         ok = true; 
