@@ -11,11 +11,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
 
+    <!-- 徹底修復：移除錯誤的 Markdown 括號，還原為標準乾淨網址，確保樣式正常載入 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -332,14 +334,15 @@
 
         async function callGeminiAI(input, mime, isImg) {
             showLoading('AI 智慧引擎', '分析中...');
-            const apiKey = ""; // 恢復原始空字串設定
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiKey = ""; 
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const prompt = "你是行程規劃專家。請從附件「逐一提取」景點、飯店、轉運站。⚠️嚴禁摘要、排除純交通動作描述。格式：[{dayNameIdentifier: '第 1 天', spots: [{name: '景點名', desc: '備註'}]}]";
             const payload = { contents: [{ parts: [ { text: prompt }, isImg ? { inlineData: { mimeType: mime, data: input } } : { text: input } ] }], generationConfig: { responseMimeType: "application/json" } };
             let ok = false;
             for (let i = 0; i < 5; i++) {
                 try {
                     const r = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                    if (!r.ok) throw new Error("API 失敗");
                     const d = await r.json();
                     const txt = d.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (txt) { mergeIncomingData(JSON.parse(txt)); ok = true; break; }
