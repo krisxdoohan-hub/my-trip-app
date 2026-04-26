@@ -1,6 +1,6 @@
 {
-    "name": "去趣 chicTrip - 專業商用版",
-    "short_name": "去趣 chicTrip",
+    "name": "放飛自我",
+    "short_name": "放飛自我",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#1e3a8a",
