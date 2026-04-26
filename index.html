@@ -11,11 +11,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js](https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js)"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js](https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js)"></script>
     
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -31,7 +31,6 @@
 
     <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl relative overflow-hidden">
 
-        <!-- Header: 動態標題與多功能列 -->
         <div class="p-3 bg-blue-900 text-white font-bold text-lg flex justify-between items-center shadow-md z-40">
             <div class="flex items-center gap-2 flex-1 overflow-hidden">
                 <i class="fas fa-map-marked-alt text-blue-300"></i>
@@ -41,27 +40,17 @@
                        oninput="saveTripTitle()"
                        placeholder="請輸入行程標題...">
             </div>
-            
-            <!-- 功能按鈕區：微調尺寸以容納多重檔案管理功能 -->
             <div class="flex items-center gap-1.5 ml-2">
                 <input type="file" id="import-file" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, image/*" class="hidden" onchange="handleImport(event)">
-                
-                <!-- 1. 行程資料夾 (切換舊檔) -->
                 <button onclick="openTripManager()" class="bg-amber-500 hover:bg-amber-400 text-white w-7 h-7 rounded-full shadow transition active:scale-95 flex items-center justify-center" title="我的所有行程">
                     <i class="fas fa-folder-open text-[10px]"></i>
                 </button>
-                
-                <!-- 2. 開新行程 (保留舊檔) -->
-                <button onclick="createNewTrip()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-7 h-7 rounded-full shadow transition active:scale-95 flex items-center justify-center" title="開新行程 (舊檔自動保留)">
+                <button onclick="createNewTrip()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-7 h-7 rounded-full shadow transition active:scale-95 flex items-center justify-center" title="開新行程">
                     <i class="fas fa-file-circle-plus text-[10px]"></i>
                 </button>
-
-                <!-- 3. 刪除當前行程 -->
                 <button onclick="deleteCurrentTrip()" class="bg-rose-500 hover:bg-rose-400 text-white w-7 h-7 rounded-full shadow transition active:scale-95 flex items-center justify-center" title="刪除目前行程">
                     <i class="fas fa-trash-can text-[10px]"></i>
                 </button>
-
-                <!-- 其他既有功能 -->
                 <button onclick="triggerImport()" class="bg-teal-500 hover:bg-teal-400 text-white w-7 h-7 rounded-full shadow transition active:scale-95 flex items-center justify-center" title="匯入行程">
                     <i class="fas fa-file-import text-[10px]"></i>
                 </button>
@@ -100,7 +89,6 @@
         </div>
     </div>
 
-    <!-- 彈窗：自訂 Modal -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[70] p-6">
         <div class="bg-white rounded-xl p-6 w-full max-w-xs shadow-2xl scale-95 transition-transform">
             <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">提示</h3>
@@ -109,21 +97,16 @@
         </div>
     </div>
 
-    <!-- 【新增】彈窗：行程檔案管理器 (Trip Manager) -->
     <div id="trip-manager-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[70] p-4">
         <div class="bg-white rounded-xl p-5 w-full max-w-sm shadow-2xl flex flex-col max-h-[80vh]">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 class="text-lg font-bold text-slate-800"><i class="fas fa-folder-open text-amber-500 mr-2"></i>我的行程檔案庫</h3>
                 <button onclick="closeTripManager()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fas fa-times"></i></button>
             </div>
-            <div class="text-xs text-slate-500 mb-3">點擊即可切換，系統會自動在背景為您儲存。</div>
-            <div id="trip-list-container" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pb-2">
-                <!-- 行程清單將動態渲染於此 -->
-            </div>
+            <div id="trip-list-container" class="flex-1 overflow-y-auto space-y-2 no-scrollbar pb-2"></div>
         </div>
     </div>
 
-    <!-- 彈窗：匯出選項 -->
     <div id="export-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[70] p-6">
         <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl transition-transform">
             <div class="flex items-center gap-3 mb-4">
@@ -151,22 +134,21 @@
         </div>
     </div>
 
-    <!-- 腳本邏輯 -->
     <script>
-        // --- 核心狀態管理 (升級為多檔支援) ---
         let allTrips = []; 
         let currentTripId = null;
         let tripData = []; 
         let currentDayIndex = 0;
         let draggedElement = null;
 
-        function generateId() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substr(2, 9); }
+        // 【關鍵修復】：加入 Math.random 備案，解決非 HTTPS 模擬器 crypto 報錯
+        function generateId() { 
+            try { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substr(2, 9); } 
+            catch(e) { return 'id_' + Date.now() + Math.random().toString(36).substr(2, 5); }
+        }
 
-        // --- 多重行程儲存引擎 ---
         function loadAllTrips() {
             const savedTrips = localStorage.getItem('chicTrip_all_trips');
-            
-            // 無縫轉移舊版單一檔案資料 (確保使用者剛才做的檔案不會不見)
             const oldData = localStorage.getItem('trip_multiday');
             const oldTitle = localStorage.getItem('trip_title') || "我的旅遊行程";
 
@@ -175,20 +157,14 @@
             } else if (oldData) {
                 const newId = generateId();
                 allTrips = [{ id: newId, title: oldTitle, data: JSON.parse(oldData), updatedAt: Date.now() }];
-                // 轉移後清理舊資料
                 localStorage.removeItem('trip_multiday');
                 localStorage.removeItem('trip_title');
             }
 
-            // 判斷該顯示哪一份行程
             currentTripId = localStorage.getItem('chicTrip_current_id');
-            
             if (!currentTripId || !allTrips.find(t => t.id === currentTripId)) {
-                if (allTrips.length > 0) {
-                    switchTrip(allTrips[0].id);
-                } else {
-                    createNewTrip(true); // 初始化建立第一份檔案
-                }
+                if (allTrips.length > 0) switchTrip(allTrips[0].id);
+                else createNewTrip(true);
             } else {
                 switchTrip(currentTripId);
             }
@@ -210,45 +186,23 @@
             }
         }
 
-        // 綁定舊的儲存事件至新引擎
         function saveTripTitle() { saveCurrentTripState(); }
         function saveItinerary() { saveCurrentTripState(); }
 
-        // --- 新增 / 刪除 / 切換 功能 ---
         function createNewTrip(isInit = false) {
-            // 建立一份全新的白紙
             const newId = generateId();
-            const newTrip = {
-                id: newId,
-                title: "新旅遊行程",
-                data: [{ id: generateId(), dayNameIdentifier: '第 1 天', spots: [] }],
-                updatedAt: Date.now()
-            };
-            
-            allTrips.unshift(newTrip); // 加入清單最上方
+            const newTrip = { id: newId, title: "新旅遊行程", data: [{ id: generateId(), dayNameIdentifier: '第 1 天', spots: [] }], updatedAt: Date.now() };
+            allTrips.unshift(newTrip); 
             saveAllTrips();
-            
-            if (!isInit) {
-                switchTrip(newId);
-                showModal('開新檔案成功', '為您開啟了一張乾淨的行程表！<br><br><span class="text-amber-600 font-bold">💡 提示：您隨時可以點擊上方的「黃色資料夾」找回剛才的舊檔案。</span>', false);
-            }
+            if (!isInit) { switchTrip(newId); }
         }
 
         function deleteCurrentTrip() {
             if (allTrips.length === 0) return;
-            const currentTitle = document.getElementById('trip-title-input').value;
-            
-            showModal('永久刪除確認', `確定要將 <b>「${currentTitle}」</b> 徹底刪除嗎？<br>此動作無法復原！`, true, () => {
-                // 從陣列中過濾掉目前這份
+            showModal('刪除確認', `確定要刪除目前行程嗎？`, true, () => {
                 allTrips = allTrips.filter(t => t.id !== currentTripId);
-                
-                // 刪除後，自動打開上一份，或直接建立新的
-                if (allTrips.length > 0) {
-                    switchTrip(allTrips[0].id);
-                } else {
-                    createNewTrip(true);
-                    switchTrip(currentTripId);
-                }
+                if (allTrips.length > 0) switchTrip(allTrips[0].id);
+                else createNewTrip(true);
                 saveAllTrips();
             });
         }
@@ -260,61 +214,29 @@
                 document.getElementById('trip-title-input').value = trip.title;
                 tripData = JSON.parse(JSON.stringify(trip.data));
                 currentDayIndex = 0;
-                saveAllTrips();
-                renderAll();
-                closeTripManager();
+                saveAllTrips(); renderAll(); closeTripManager();
             }
         }
 
-        // --- 行程資料夾 Modal 邏輯 ---
         function openTripManager() {
-            saveCurrentTripState(); // 打開前強制存檔一次
+            saveCurrentTripState(); 
             const container = document.getElementById('trip-list-container');
             container.innerHTML = '';
-            
-            // 依照更新時間排序 (最新的在最上面)
-            const sortedTrips = [...allTrips].sort((a, b) => b.updatedAt - a.updatedAt);
-            
-            sortedTrips.forEach(t => {
+            allTrips.sort((a, b) => b.updatedAt - a.updatedAt).forEach(t => {
                 const isActive = t.id === currentTripId;
-                const activeClass = isActive ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white hover:bg-slate-50';
-                const dayCount = t.data.length;
-                const spotCount = t.data.reduce((acc, curr) => acc + curr.spots.length, 0);
-                
-                // 格式化時間
-                const dateObj = new Date(t.updatedAt);
-                const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-
-                container.insertAdjacentHTML('beforeend', `
-                    <div onclick="switchTrip('${t.id}')" class="p-3 border-2 rounded-xl cursor-pointer transition ${activeClass} flex justify-between items-center">
-                        <div class="overflow-hidden pr-2">
-                            <div class="font-bold text-slate-700 text-sm truncate">${t.title}</div>
-                            <div class="text-[11px] text-slate-500 mt-1 font-medium">
-                                <i class="fas fa-calendar-day mr-1 text-slate-400"></i>${dayCount} 天 
-                                <span class="mx-1 text-slate-300">|</span> 
-                                <i class="fas fa-map-pin mr-1 text-slate-400"></i>${spotCount} 景點
-                            </div>
-                            <div class="text-[10px] text-slate-400 mt-1">最後修改: ${dateStr}</div>
-                        </div>
-                        ${isActive ? '<div class="text-xs bg-blue-600 text-white px-2 py-1 rounded font-bold shadow whitespace-nowrap">目前開啟</div>' : '<i class="fas fa-chevron-right text-slate-300"></i>'}
-                    </div>
-                `);
+                const activeClass = isActive ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white';
+                container.insertAdjacentHTML('beforeend', `<div onclick="switchTrip('${t.id}')" class="p-3 border-2 rounded-xl cursor-pointer transition ${activeClass} flex justify-between items-center"><div class="overflow-hidden"><div class="font-bold text-slate-700 text-sm truncate">${t.title}</div><div class="text-[10px] text-slate-400 mt-1">${t.data.length} 天 | ${t.data.reduce((a,c)=>a+c.spots.length,0)} 景點</div></div>${isActive ? '<i class="fas fa-check-circle text-blue-500"></i>' : ''}</div>`);
             });
             document.getElementById('trip-manager-modal').classList.remove('hidden');
         }
 
-        function closeTripManager() {
-            document.getElementById('trip-manager-modal').classList.add('hidden');
-        }
+        function closeTripManager() { document.getElementById('trip-manager-modal').classList.add('hidden'); }
 
-
-        // --- 核心識別演算法 ---
         function normalizeDayName(name) {
             if (!name) return "1";
             let str = name.toString().replace(/\s+/g, '').replace(/[第天DayD【】\[\]\-\_]/gi, '');
             const chnMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
-            if(chnMap[str]) return chnMap[str].toString();
-            return str || "1";
+            return chnMap[str] ? chnMap[str].toString() : (str || "1");
         }
 
         function extractTimeMinutes(text) {
@@ -323,8 +245,7 @@
             const match = text.match(regex);
             if (match) {
                 let am = (match[1] || '').toUpperCase();
-                let h = parseInt(match[2], 10);
-                let m = parseInt(match[3], 10);
+                let h = parseInt(match[2], 10), m = parseInt(match[3], 10);
                 if ((am.includes('下') || am === 'PM') && h < 12) h += 12;
                 if ((am.includes('上') || am === 'AM') && h === 12) h = 0;
                 return h * 60 + m; 
@@ -332,56 +253,31 @@
             return 9999;
         }
 
-        // --- 核心邏輯：合併、去重、地標保護 ---
         function mergeIncomingData(incomingDays) {
             const hotelKey = /(飯店|酒店|旅店|民宿|旅館|住宿|Hotel|Stay|Inn)/i;
             const hubKey = /(站|車站|轉運站|機場|碼頭|港|航廈|月台)/;
             const transitAction = /^(交通|移動|移動過程|交通時間|步行時間|搭車時間)$|^前往|^(搭乘|搭|搭機|轉機|坐車|走路|步行)$/;
 
             let merged = JSON.parse(JSON.stringify(tripData));
-
             incomingDays.forEach(inDay => {
                 const inID = normalizeDayName(inDay.dayNameIdentifier);
                 let target = merged.find(d => normalizeDayName(d.dayNameIdentifier) === inID);
-                
-                if (!target) {
-                    target = { id: generateId(), dayNameIdentifier: inDay.dayNameIdentifier || `第 ${merged.length + 1} 天`, spots: [] };
-                    merged.push(target);
-                }
-
+                if (!target) { target = { id: generateId(), dayNameIdentifier: inDay.dayNameIdentifier || `第 ${merged.length + 1} 天`, spots: [] }; merged.push(target); }
                 const daySeen = new Set();
-                target.spots.forEach(s => {
-                    if (!hotelKey.test(s.name)) daySeen.add(s.name.trim().toLowerCase());
-                });
-
+                target.spots.forEach(s => { if (!hotelKey.test(s.name)) daySeen.add(s.name.trim().toLowerCase()); });
                 (inDay.spots || []).forEach(inSpot => {
                     const name = (inSpot.name || '').trim();
-                    if (!name) return;
-                    if (transitAction.test(name) && !hubKey.test(name)) return;
-
-                    const low = name.toLowerCase();
-                    const isHotel = hotelKey.test(name);
-                    if (!isHotel && daySeen.has(low)) return;
-                    if (!isHotel) daySeen.add(low);
-
+                    if (!name || (transitAction.test(name) && !hubKey.test(name))) return;
+                    const isH = hotelKey.test(name);
+                    if (!isH && daySeen.has(name.toLowerCase())) return;
+                    if (!isH) daySeen.add(name.toLowerCase());
                     target.spots.push({ id: generateId(), name: name, desc: inSpot.desc || '' });
                 });
             });
-
-            merged.forEach(day => {
-                day.spots.sort((a, b) => {
-                    const tA = Math.min(extractTimeMinutes(a.name), extractTimeMinutes(a.desc));
-                    const tB = Math.min(extractTimeMinutes(b.name), extractTimeMinutes(b.desc));
-                    return tA - tB;
-                });
-            });
-
-            tripData = merged;
-            saveItinerary();
-            renderAll();
+            merged.forEach(day => { day.spots.sort((a, b) => extractTimeMinutes(a.name + a.desc) - extractTimeMinutes(b.name + b.desc)); });
+            tripData = merged; saveItinerary(); renderAll();
         }
 
-        // --- UI 回饋與彈窗系統 ---
         function showModal(title, message, isConfirm, onConfirm) {
             const m = document.getElementById('custom-modal');
             document.getElementById('modal-title').innerText = title;
@@ -389,13 +285,10 @@
             const acts = document.getElementById('modal-actions');
             acts.innerHTML = '';
             if (isConfirm) {
-                acts.innerHTML = `
-                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition">取消</button>
-                    <button id="modal-confirm-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-bold shadow-lg hover:bg-red-600 transition">確定</button>
-                `;
+                acts.innerHTML = `<button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">取消</button><button id="modal-confirm-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-bold">確定</button>`;
                 document.getElementById('modal-confirm-btn').onclick = () => { onConfirm(); closeModal(); };
             } else {
-                acts.innerHTML = `<button onclick="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold w-full hover:bg-blue-700 transition">確定</button>`;
+                acts.innerHTML = `<button onclick="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold w-full">確定</button>`;
             }
             m.classList.remove('hidden');
         }
@@ -403,92 +296,52 @@
         function showLoading(t, d) { document.getElementById('loading-title').innerText = t; document.getElementById('loading-desc').innerText = d; document.getElementById('ai-loading-modal').classList.remove('hidden'); }
         function hideLoading() { document.getElementById('ai-loading-modal').classList.add('hidden'); }
 
-        // --- 萬能匯出 ---
         function openExportModal() { document.getElementById('export-modal').classList.remove('hidden'); }
         function closeExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
         function executeExport() {
             const fmt = document.querySelector('input[name="export-format"]:checked').value;
             const title = document.getElementById('trip-title-input').value.trim() || "旅遊行程";
             closeExportModal();
-            if (tripData.every(d => d.spots.length === 0)) return showModal('提示', '行程目前為空，沒有資料可匯出', false);
-
-            if (fmt === 'excel') exportExcel(title);
-            else if (fmt === 'pdf') exportPDF(title);
-            else exportWord(title);
+            if (tripData.every(d => d.spots.length === 0)) return showModal('提示', '沒有資料可匯出', false);
+            if (fmt === 'excel') exportExcel(title); else if (fmt === 'pdf') exportPDF(title); else exportWord(title);
         }
 
         function exportExcel(title) {
             const rows = [];
             tripData.forEach(d => {
-                d.spots.forEach((s, i) => {
-                    rows.push({ '天數': d.dayNameIdentifier, '序': i+1, '景點名稱': s.name, '備註說明': s.desc });
-                });
+                d.spots.forEach((s, i) => rows.push({ '天數': d.dayNameIdentifier, '序': i+1, '景點名稱': s.name, '備註說明': s.desc }));
                 rows.push({ '天數': '', '序': '', '景點名稱': '', '備註說明': '' });
             });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "行程");
-            XLSX.writeFile(wb, `${title}.xlsx`);
+            XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "行程"), `${title}.xlsx`);
         }
 
         function exportPDF(title) {
-            const el = document.createElement('div');
-            el.style.padding = '30px';
-            el.innerHTML = `<h1 style="color:#1e3a8a; text-align:center; margin-bottom: 30px;">${title}</h1>`;
-            
+            const el = document.createElement('div'); el.style.padding = '30px'; el.innerHTML = `<h1 style="color:#1e3a8a; text-align:center; margin-bottom: 30px;">${title}</h1>`;
             tripData.forEach((d, dIdx) => {
                 if(d.spots.length === 0) return;
-                const spacerStyle = dIdx > 0 ? 'margin-top: 50px;' : '';
-                el.innerHTML += `<h2 style="background:#f1f5f9; padding:10px; border-left: 5px solid #1e3a8a; ${spacerStyle}">${d.dayNameIdentifier}</h2>`;
-                d.spots.forEach((s, i) => {
-                    el.innerHTML += `<p style="margin: 12px 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        <b style="color: #334155;">${i+1}. ${s.name}</b><br>
-                        <span style="font-size: 0.85em; color: #64748b;">${s.desc}</span>
-                    </p>`;
-                });
+                el.innerHTML += `<h2 style="background:#f1f5f9; padding:10px; border-left: 5px solid #1e3a8a; ${dIdx>0?'margin-top:40px;':''}">${d.dayNameIdentifier}</h2>`;
+                d.spots.forEach((s, i) => el.innerHTML += `<p style="margin:10px 0; border-bottom:1px solid #eee;"><b>${i+1}. ${s.name}</b><br><small>${s.desc}</small></p>`);
             });
-            html2pdf().from(el).set({
-                margin: 10,
-                filename: `${title}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
+            html2pdf().from(el).set({ filename: `${title}.pdf`, jsPDF: { format: 'a4' } }).save();
         }
 
         function exportWord(title) {
             let doc = `${title}\n\n`;
-            tripData.forEach(d => {
-                doc += `【${d.dayNameIdentifier}】\n`;
-                d.spots.forEach((s, i) => {
-                    doc += `${i+1}. ${s.name} - ${s.desc}\n`;
-                });
-                doc += "\n\n"; 
-            });
+            tripData.forEach(d => { doc += `【${d.dayNameIdentifier}】\n`; d.spots.forEach((s, i) => doc += `${i+1}. ${s.name} - ${s.desc}\n`); doc += "\n\n"; });
             const b = new Blob(['\ufeff', doc], { type: 'application/msword' });
             const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `${title}.doc`; l.click();
         }
 
-        // --- 智慧匯入引擎 ---
-        function triggerImport() { document.getElementById('import-file').click(); }
         async function handleImport(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            const file = e.target.files[0]; if (!file) return;
             const ext = file.name.split('.').pop().toLowerCase();
-            
             if (file.type.startsWith('image/')) {
-                const r = new FileReader(); 
-                r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); 
-                r.readAsDataURL(file);
+                const r = new FileReader(); r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); r.readAsDataURL(file);
             } else if (ext === 'docx') {
-                showLoading('Word 解析中', '正在由 AI 精準提取...');
-                const r = new FileReader(); 
-                r.onload = ev => mammoth.extractRawText({arrayBuffer: ev.target.result}).then(res => callGeminiAI(res.value, 'text/plain', false)); 
-                r.readAsArrayBuffer(file);
+                showLoading('解析中', '讀取 Word...');
+                const r = new FileReader(); r.onload = ev => mammoth.extractRawText({arrayBuffer: ev.target.result}).then(res => callGeminiAI(res.value, 'text/plain', false)).catch(() => hideLoading()); r.readAsArrayBuffer(file);
             } else if (ext === 'doc' || ext === 'txt') {
-                showLoading('文件解析中', '正在由 AI 整理行程...');
-                const r = new FileReader();
-                r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false);
-                r.readAsText(file);
+                const r = new FileReader(); r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false); r.readAsText(file);
             } else {
                 const r = new FileReader();
                 r.onload = ev => {
@@ -499,132 +352,67 @@
                             const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                             const fmt = [];
                             rows.forEach(r => {
-                                const dN = r['天數'] || '第 1 天';
                                 if(!r['景點名稱']) return;
+                                const dN = r['天數'] || '第 1 天';
                                 let d = fmt.find(x => x.dayNameIdentifier === dN);
                                 if(!d) { d = { dayNameIdentifier: dN, spots: [] }; fmt.push(d); }
                                 d.spots.push({ name: r['景點名稱'], desc: r['備註說明'] || '' });
                             });
                             mergeIncomingData(fmt);
                         }
-                        showModal('匯入成功', '資料已智慧追加並排序', false);
-                    } catch(err) { showModal('錯誤', '檔案格式不支援', false); }
+                    } catch(err) { showModal('錯誤', '格式不支援', false); }
                 };
                 r.readAsArrayBuffer(file);
             }
-            setTimeout(() => { e.target.value = ''; }, 500);
+            e.target.value = '';
         }
 
-        // --- AI 解析引擎 ---
         async function callGeminiAI(input, mime, isImg) {
             showLoading('AI 智慧引擎', '分析中...');
+            // 【修復重點】：這裡必須手動填入您的 API Key 才能在外部網域跑通
             const apiKey = "AIzaSyDgdR3AIWEpS7SsJwbRKHrBimdkNlCFSLU"; 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const prompt = "你是行程規劃專家。請從附件「逐一提取」景點、飯店、轉運站。⚠️嚴禁摘要、排除純交通動作描述。請務必以 JSON Array 格式回傳。格式：[{dayNameIdentifier: '第 1 天', spots: [{name: '景點名', desc: '備註'}]}]";
-            
             const payload = { 
-                contents: [{ parts: [ { text: prompt }, isImg ? { inlineData: { mimeType: mime, data: input } } : { text: input } ] }], 
+                contents: [{ parts: [ { text: "提取景點與轉運站，嚴禁交通動作，JSON回傳。" }, isImg ? { inlineData: { mimeType: mime, data: input } } : { text: input } ] }], 
                 generationConfig: { 
                     responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                dayNameIdentifier: { type: "STRING" },
-                                spots: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, desc: { type: "STRING" } } } }
-                            }
-                        }
-                    }
+                    responseSchema: { type: "ARRAY", items: { type: "OBJECT", properties: { dayNameIdentifier: { type: "STRING" }, spots: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, desc: { type: "STRING" } } } } } } }
                 } 
             };
-
-            let ok = false;
             for (let i = 0; i < 5; i++) {
                 try {
-                    const r = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
-                    if (!r.ok) throw new Error("API 失敗");
+                    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!r.ok) throw new Error(r.status);
                     const d = await r.json();
-                    let txt = d.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (txt) { 
-                        txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
-                        mergeIncomingData(JSON.parse(txt)); 
-                        ok = true; 
-                        break; 
-                    }
+                    let txt = d.candidates[0].content.parts[0].text.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    mergeIncomingData(JSON.parse(txt)); hideLoading(); return;
                 } catch (e) { await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000)); }
             }
-            hideLoading();
-            if(!ok) showModal('系統忙碌', 'AI 伺服器無回應或格式異常，請稍後再試', false);
+            hideLoading(); showModal('連線失敗', '伺服器未回應。請確認 API 金鑰已填寫且網域白名單正確。', false);
         }
 
-        // --- 基礎渲染控制 ---
         function renderAll() { renderTabs(); renderItinerary(); }
-        
         function renderTabs() {
             const c = document.getElementById('tabs-container'); c.innerHTML = '';
             tripData.forEach((d, i) => {
                 const active = i === currentDayIndex;
-                const style = active ? "bg-white text-blue-900 shadow-md scale-105" : "bg-blue-700 text-blue-200 hover:bg-blue-600";
-                c.insertAdjacentHTML('beforeend', `<div class="flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all transform flex items-center gap-2 cursor-pointer ${style}" onclick="switchDay(${i}, this)"><span>D${i+1}</span>${tripData.length > 1 ? `<i class="fas fa-times-circle opacity-40 hover:opacity-100 text-[10px]" onclick="deleteDay(event, ${i})"></i>` : ''}</div>`);
+                c.insertAdjacentHTML('beforeend', `<div class="flex-shrink-0 px-4 py-2 rounded-full text-[10px] font-bold cursor-pointer ${active?'bg-white text-blue-900':'bg-blue-700 text-blue-200'}" onclick="switchDay(${i})">D${i+1}</div>`);
             });
         }
-        function switchDay(i, el) { currentDayIndex = i; renderAll(); if(el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }
-        function scrollTabs(dir) { document.getElementById('tabs-container').scrollBy({ left: dir === 'left' ? -150 : 150, behavior: 'smooth' }); }
+        function switchDay(i) { currentDayIndex = i; renderAll(); }
+        function scrollTabs(dir) { document.getElementById('tabs-container').scrollBy({ left: dir === 'left' ? -100 : 100, behavior: 'smooth' }); }
         function addDay() { tripData.push({ id: generateId(), dayNameIdentifier: `第 ${tripData.length+1} 天`, spots: [] }); currentDayIndex = tripData.length-1; saveItinerary(); renderAll(); }
-        function deleteDay(e, i) { 
-            e.stopPropagation(); 
-            if (tripData.length <= 1) return; 
-            showModal('確認刪除', `確定要刪除第 ${i+1} 天的所有行程？`, true, () => { 
-                tripData.splice(i, 1); 
-                tripData.forEach((d, idx) => d.dayNameIdentifier = `第 ${idx+1} 天`); 
-                if (currentDayIndex >= tripData.length) currentDayIndex = tripData.length - 1; 
-                saveItinerary(); 
-                renderAll(); 
-            }); 
-        }
         function renderItinerary() {
             const list = document.getElementById('itinerary-list'); list.innerHTML = '';
             const spots = tripData[currentDayIndex].spots;
-            
-            if (spots.length === 0) {
-                list.innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
-                    <i class="fas fa-map-location-dot text-5xl mb-4"></i>
-                    <p class="text-sm font-bold">這天還沒有安排任何景點</p>
-                    <p class="text-xs mt-1">點擊下方新增或匯入檔案來開始規劃吧！</p>
-                </div>`;
-                return;
-            }
-            
-            spots.forEach((s, idx) => list.insertAdjacentHTML('beforeend', `<div class="drag-item p-4 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between cursor-move hover:border-blue-200 transition" draggable="true" data-index="${idx}"><div class="flex items-center gap-4"><span class="w-6 h-6 bg-slate-100 rounded text-[10px] flex items-center justify-center font-bold text-slate-400">${idx+1}</span><div><b class="text-slate-700 block text-sm">${s.name}</b><span class="text-[10px] text-slate-400">${s.desc}</span></div></div><button onclick="deleteSpot(${idx})" class="text-slate-300 hover:text-red-500 p-2"><i class="fas fa-trash-alt text-xs"></i></button></div>`));
-            bindDragEvents();
+            if (spots.length === 0) { list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60"><i class="fas fa-map-location-dot text-4xl mb-2"></i><p class="text-xs">目前沒有景點</p></div>`; return; }
+            spots.forEach((s, idx) => list.insertAdjacentHTML('beforeend', `<div class="p-3 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between mb-2"><div class="flex items-center gap-3"><span class="text-[10px] text-slate-300 font-bold">${idx+1}</span><div><b class="text-slate-700 block text-xs">${s.name}</b><span class="text-[10px] text-slate-400">${s.desc}</span></div></div><button onclick="deleteSpot(${idx})" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash-alt text-[10px]"></i></button></div>`));
         }
-        function addCustomSpot() { const inp = document.getElementById('new-spot-name'); const n = inp.value.trim(); if (!n) return; tripData[currentDayIndex].spots.push({ id: generateId(), name: n, desc: '自訂行程' }); saveItinerary(); renderItinerary(); inp.value = ''; }
+        function addCustomSpot() { const inp = document.getElementById('new-spot-name'); const n = inp.value.trim(); if (!n) return; tripData[currentDayIndex].spots.push({ id: generateId(), name: n, desc: '手動新增' }); saveItinerary(); renderItinerary(); inp.value = ''; }
         function deleteSpot(i) { tripData[currentDayIndex].spots.splice(i, 1); saveItinerary(); renderItinerary(); }
-        function bindDragEvents() {
-            const items = document.querySelectorAll('.drag-item');
-            items.forEach(item => {
-                item.addEventListener('dragstart', function() { draggedElement = this; this.classList.add('dragging'); });
-                item.addEventListener('dragend', function() { this.classList.remove('dragging'); document.querySelectorAll('.drag-item').forEach(el => el.classList.remove('drag-over')); syncArrayFromDOM(); });
-                item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
-                item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-                item.addEventListener('drop', function(e) { e.preventDefault(); if (this !== draggedElement) { const all = [...document.querySelectorAll('.drag-item')]; if (all.indexOf(draggedElement) < all.indexOf(this)) this.after(draggedElement); else this.before(draggedElement); } });
-            });
-        }
-        function syncArrayFromDOM() { const doms = document.querySelectorAll('.drag-item'); const arr = []; doms.forEach(d => arr.push(tripData[currentDayIndex].spots[parseInt(d.dataset.index, 10)])); tripData[currentDayIndex].spots = arr; saveItinerary(); renderAll(); }
 
-        // 系統初始化入口，改為載入「所有」行程
         window.onload = loadAllTrips;
-
-        // PWA 註冊腳本
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-              .then(reg => console.log('PWA Service Worker 註冊成功'))
-              .catch(err => console.log('PWA 註冊失敗:', err));
-          });
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
     </script>
 </body>
 </html>
