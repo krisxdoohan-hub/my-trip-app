@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -6,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>放分自我</title>
 
-    <!-- 絕對純淨連結，確保樣式 100% 載入 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -27,7 +25,6 @@
 
     <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl relative overflow-hidden">
 
-        <!-- Header: 行程管理 -->
         <div class="p-3 bg-blue-900 text-white font-bold flex justify-between items-center shadow-lg z-40">
             <div class="flex items-center gap-2 flex-1 overflow-hidden">
                 <i class="fas fa-map-marked-alt text-blue-300"></i>
@@ -39,7 +36,7 @@
             </div>
             
             <div class="flex items-center gap-1.5 ml-2">
-                <input type="file" id="import-file" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, image/*" class="hidden" onchange="handleImport(event)">
+                <input type="file" id="import-file" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*" class="hidden" onchange="handleImport(event)">
                 
                 <button onclick="openTripManager()" class="bg-amber-500 hover:bg-amber-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="行程庫">
                     <i class="fas fa-folder-open text-[10px]"></i>
@@ -62,7 +59,6 @@
             </div>
         </div>
 
-        <!-- 導覽頁籤 -->
         <div class="bg-blue-800 flex items-center relative z-30 shadow-inner group">
             <button onclick="scrollTabs('left')" class="absolute left-0 z-10 bg-blue-900/50 text-white w-6 h-full opacity-0 group-hover:opacity-100 transition">
                 <i class="fas fa-chevron-left text-[10px]"></i>
@@ -73,10 +69,8 @@
             </button>
         </div>
 
-        <!-- 行程列表：物理拖曳與內容渲染 -->
         <div class="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-3" id="itinerary-list"></div>
 
-        <!-- 底部新增 -->
         <div class="p-4 bg-white border-t border-gray-100 shadow-md z-40">
             <div class="flex gap-2">
                 <input id="new-spot-name" class="border border-gray-200 rounded-lg p-3 flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-sm" placeholder="輸入景點名稱...">
@@ -84,7 +78,6 @@
             </div>
         </div>
 
-        <!-- AI 解析遮罩 -->
         <div id="ai-loading-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden z-[60]">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-400 mb-6"></div>
             <h3 class="text-lg font-bold text-white mb-2 animate-pulse">正在精準解析行程...</h3>
@@ -92,7 +85,6 @@
         </div>
     </div>
 
-    <!-- 彈窗系統 -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-[70] p-6">
         <div class="bg-white rounded-xl p-6 w-full max-w-xs shadow-2xl">
             <h3 id="modal-title" class="text-lg font-bold mb-2 text-slate-800"></h3>
@@ -227,26 +219,21 @@
 
         // --- AI 核心 (動態金鑰安全版) ---
         async function callGeminiAI(input, mime, isImg) {
-            // 1. 嘗試從本地端讀取金鑰 (使用專屬的 Key 名稱避免衝突)
             let apiKey = localStorage.getItem('chicTrip_api_key');
 
-            // 2. 若無金鑰，彈出視窗要求輸入
             if (!apiKey) {
                 apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
                 if (!apiKey || apiKey.trim() === '') {
                     alert('必須提供 API Key 才能執行 AI 解析功能。');
                     return;
                 }
-                // 將輸入的字串去除頭尾空白後存入本地端
                 localStorage.setItem('chicTrip_api_key', apiKey.trim());
             }
 
             showLoading();
             
-            // 3. 組合帶有動態金鑰的 URL
             const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            // 4. 保留你原本的 Prompt 與 Payload 邏輯
             const payload = { 
                 contents: [{
                     parts: [
@@ -277,7 +264,6 @@
                 }]
             };
 
-            // 5. 執行 5 次重試的 Fetch 邏輯
             for (let i = 0; i < 5; i++) {
                 try {
                     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -288,7 +274,6 @@
                     const d = await r.json();
                     let txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-                    // 清理 markdown 包裝
                     txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
 
                     if (!txt) { throw new Error('AI 無回應內容'); }
@@ -301,12 +286,11 @@
 
                     mergeIncomingData(parsed);
                     hideLoading(); 
-                    return; // 成功則跳出迴圈
+                    return; 
                     
                 } catch (e) { 
                     if (i === 4) {
                         hideLoading();
-                        // 6. 錯誤防呆：遇到權限問題或失效，自動清除本地舊金鑰
                         if (e.message.includes('403') || e.message.includes('API_KEY')) {
                             localStorage.removeItem('chicTrip_api_key');
                             showModal('金鑰失效', `API 金鑰無效、外洩或已被官方封鎖。<br><br>系統已清除您的本機紀錄，請重新點擊匯入並輸入新的金鑰。`, false);
@@ -338,7 +322,6 @@
             tripData.forEach((d, i) => {
                 const active = i === currentDayIndex;
                 const style = active ? 'bg-white text-blue-900 shadow-md scale-105' : 'bg-blue-700 text-blue-200 hover:bg-blue-600';
-                // 確保 X 刪除按鈕 100% 出現
                 c.insertAdjacentHTML('beforeend', `
                     <div class="flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-bold cursor-pointer transition flex items-center gap-2 ${style}" onclick="switchDay(${i})">
                         <span>D${i+1}</span>
@@ -374,7 +357,7 @@
                     <button onclick="deleteSpot(${idx})" class="text-slate-300 hover:text-red-500 p-2 ml-2 flex-shrink-0"><i class="fas fa-trash-alt text-[10px]"></i></button>
                 </div>
             `));
-            bindDragEvents(); // 必須每次手動綁定
+            bindDragEvents(); 
         }
 
         // --- 拖曳對接 ---
@@ -407,30 +390,26 @@
         // --- 匯入/匯出：100% 精準對接 ---
         function triggerImport() { document.getElementById('import-file').click(); }
         
-       async function handleImport(e) {
+        async function handleImport(e) {
             const file = e.target.files[0]; if (!file) return;
             const ext = file.name.split('.').pop().toLowerCase();
             
             if (file.type.startsWith('image/')) {
-                // 1. 原有的圖片處理
                 const r = new FileReader(); 
                 r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); 
                 r.readAsDataURL(file);
                 
             } else if (ext === 'pdf') {
-                // 2. 【新增】PDF 處理：Gemini 支援直接讀取 PDF 的 Base64
                 const r = new FileReader(); 
                 r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], 'application/pdf', true); 
                 r.readAsDataURL(file);
                 
             } else if (ext === 'doc' || ext === 'txt' || ext === 'json' || ext === 'csv') {
-                // 3. 【新增】處理自己匯出的假 DOC (純文字) 或一般純文字檔
                 const r = new FileReader(); 
                 r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false); 
                 r.readAsText(file);
                 
             } else if (ext === 'docx') {
-                // 4. 原有的 DOCX 處理 (使用 Mammoth)，保持不變
                 const r = new FileReader(); 
                 r.onload = async (ev) => {
                     try {
@@ -443,7 +422,6 @@
                 r.readAsArrayBuffer(file);
                 
             } else {
-                // 5. 原有的 Excel 處理
                 const r = new FileReader(); 
                 r.onload = ev => {
                     try {
@@ -465,10 +443,9 @@
                 };
                 r.readAsArrayBuffer(file);
             }
-            
-            // 清空 input value 確保同一個檔案可以重複選取
             e.target.value = '';
         }
+
         function openExportModal() { document.getElementById('export-modal').classList.remove('hidden'); }
         function closeExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
 
@@ -481,7 +458,6 @@
             if (fmt === 'excel') {
                 const rows = [];
                 tripData.forEach(d => { d.spots.forEach((s, i) => rows.push({ '天數': d.dayNameIdentifier, '序': i+1, '景點名稱': s.name, '備註說明': s.desc })); rows.push({}); });
-                // 【修復關鍵】：補完 XLSX Workbook 建立邏輯
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(rows);
                 XLSX.utils.book_append_sheet(wb, ws, "行程表");
@@ -513,7 +489,6 @@
         function hideLoading() { document.getElementById('ai-loading-modal').classList.add('hidden'); }
 
         window.onload = function() {
-            // 清理舊快取
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(regs => { for(let reg of regs) reg.unregister(); });
             }
