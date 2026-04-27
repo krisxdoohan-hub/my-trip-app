@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -224,19 +225,33 @@
             return 9999;
         }
 
-        // --- AI 核心 (修復 404 問題，改用公共正式版型號) ---
+        // --- AI 核心 (動態金鑰安全版) ---
         async function callGeminiAI(input, mime, isImg) {
+            // 1. 嘗試從本地端讀取金鑰 (使用專屬的 Key 名稱避免衝突)
+            let apiKey = localStorage.getItem('chicTrip_api_key');
+
+            // 2. 若無金鑰，彈出視窗要求輸入
+            if (!apiKey) {
+                apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
+                if (!apiKey || apiKey.trim() === '') {
+                    alert('必須提供 API Key 才能執行 AI 解析功能。');
+                    return;
+                }
+                // 將輸入的字串去除頭尾空白後存入本地端
+                localStorage.setItem('chicTrip_api_key', apiKey.trim());
+            }
+
             showLoading();
-            // 已填寫您提供的金鑰
-            const apiKey = "AIzaSyDgdR3AIWEpS7SsJwbRKHrBimdkNlCFSLU"; 
-            // 【修復關鍵】：模型名稱更改為 gemini-1.5-flash，這是公共 API 的正確名稱
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
+            // 3. 組合帶有動態金鑰的 URL
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            
+            // 4. 保留你原本的 Prompt 與 Payload 邏輯
             const payload = { 
-  contents: [{
-    parts: [
-      {
-        text: `
+                contents: [{
+                    parts: [
+                        {
+                            text: `
 你是行程解析引擎，只能輸出 JSON，禁止任何說明文字。
 
 格式如下：
@@ -254,14 +269,15 @@
 2. 不要 \`\`\` 包裹
 3. 不要解釋
 `
-      },
-      isImg 
-        ? { inlineData: { mimeType: mime, data: input } } 
-        : { text: input }
-    ]
-  }]
-};
+                        },
+                        isImg 
+                            ? { inlineData: { mimeType: mime, data: input } } 
+                            : { text: input }
+                    ]
+                }]
+            };
 
+            // 5. 執行 5 次重試的 Fetch 邏輯
             for (let i = 0; i < 5; i++) {
                 try {
                     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -272,33 +288,31 @@
                     const d = await r.json();
                     let txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-// 清理 markdown 包裝
-txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    // 清理 markdown 包裝
+                    txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-// 基本防呆
-if (!txt) {
-    throw new Error('AI 無回應內容');
-}
+                    if (!txt) { throw new Error('AI 無回應內容'); }
 
-// 嘗試解析 JSON
-let parsed;
-try {
-    parsed = JSON.parse(txt);
-} catch (err) {
-    throw new Error('JSON 解析失敗');
-}
+                    let parsed;
+                    try { parsed = JSON.parse(txt); } 
+                    catch (err) { throw new Error('JSON 解析失敗'); }
 
-// 統一格式（避免 AI 回傳 object）
-if (!Array.isArray(parsed)) {
-    parsed = [parsed];
-}
+                    if (!Array.isArray(parsed)) { parsed = [parsed]; }
 
-mergeIncomingData(parsed);
-                    hideLoading(); return;
+                    mergeIncomingData(parsed);
+                    hideLoading(); 
+                    return; // 成功則跳出迴圈
+                    
                 } catch (e) { 
                     if (i === 4) {
                         hideLoading();
-                        showModal('解析失敗', `原因：${e.message}<br><br>請檢查金鑰是否有網域限制。`, false);
+                        // 6. 錯誤防呆：遇到權限問題或失效，自動清除本地舊金鑰
+                        if (e.message.includes('403') || e.message.includes('API_KEY')) {
+                            localStorage.removeItem('chicTrip_api_key');
+                            showModal('金鑰失效', `API 金鑰無效、外洩或已被官方封鎖。<br><br>系統已清除您的本機紀錄，請重新點擊匯入並輸入新的金鑰。`, false);
+                        } else {
+                            showModal('解析失敗', `原因：${e.message}<br><br>請檢查網路連線或稍後再試。`, false);
+                        }
                     }
                     await new Promise(res => setTimeout(res, 1000)); 
                 }
