@@ -230,7 +230,7 @@
             // 已填寫您提供的金鑰
             const apiKey = "AIzaSyDgdR3AIWEpS7SsJwbRKHrBimdkNlCFSLU"; 
             // 【修復關鍵】：模型名稱更改為 gemini-1.5-flash，這是公共 API 的正確名稱
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
             
             const payload = { 
                 contents: [{ parts: [ { text: "你是行程專家。提取景點名稱與描述，嚴禁動作。回傳 JSON：[{dayNameIdentifier:'第 1 天', spots:[{name:'名', desc:'備註'}]}]" }, isImg ? { inlineData: { mimeType: mime, data: input } } : { text: input } ] }], 
