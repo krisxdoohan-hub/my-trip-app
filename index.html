@@ -407,19 +407,45 @@
         // --- 匯入/匯出：100% 精準對接 ---
         function triggerImport() { document.getElementById('import-file').click(); }
         
-        async function handleImport(e) {
+       async function handleImport(e) {
             const file = e.target.files[0]; if (!file) return;
             const ext = file.name.split('.').pop().toLowerCase();
+            
             if (file.type.startsWith('image/')) {
-                const r = new FileReader(); r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); r.readAsDataURL(file);
+                // 1. 原有的圖片處理
+                const r = new FileReader(); 
+                r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); 
+                r.readAsDataURL(file);
+                
+            } else if (ext === 'pdf') {
+                // 2. 【新增】PDF 處理：Gemini 支援直接讀取 PDF 的 Base64
+                const r = new FileReader(); 
+                r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], 'application/pdf', true); 
+                r.readAsDataURL(file);
+                
+            } else if (ext === 'doc' || ext === 'txt' || ext === 'json' || ext === 'csv') {
+                // 3. 【新增】處理自己匯出的假 DOC (純文字) 或一般純文字檔
+                const r = new FileReader(); 
+                r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false); 
+                r.readAsText(file);
+                
             } else if (ext === 'docx') {
-                const r = new FileReader(); r.onload = async (ev) => {
-                    const res = await mammoth.extractRawText({arrayBuffer: ev.target.result});
-                    if(res.value) callGeminiAI(res.value, 'text/plain', false);
+                // 4. 原有的 DOCX 處理 (使用 Mammoth)，保持不變
+                const r = new FileReader(); 
+                r.onload = async (ev) => {
+                    try {
+                        const res = await mammoth.extractRawText({arrayBuffer: ev.target.result});
+                        if(res.value) callGeminiAI(res.value, 'text/plain', false);
+                    } catch (err) {
+                        showModal('錯誤', 'DOCX 解析失敗。', false);
+                    }
                 };
                 r.readAsArrayBuffer(file);
+                
             } else {
-                const r = new FileReader(); r.onload = ev => {
+                // 5. 原有的 Excel 處理
+                const r = new FileReader(); 
+                r.onload = ev => {
                     try {
                         const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
                         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
@@ -433,13 +459,16 @@
                             d.spots.push({ name: spot, desc: r['備註說明'] || r['備註'] || '' });
                         });
                         mergeIncomingData(fmt);
-                    } catch(err) { showModal('錯誤', 'Excel 解析失敗。', false); }
+                    } catch(err) { 
+                        showModal('錯誤', 'Excel 解析失敗。', false); 
+                    }
                 };
                 r.readAsArrayBuffer(file);
             }
+            
+            // 清空 input value 確保同一個檔案可以重複選取
             e.target.value = '';
         }
-
         function openExportModal() { document.getElementById('export-modal').classList.remove('hidden'); }
         function closeExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
 
