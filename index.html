@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>放分自我</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="apple-touch-icon" href="./icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -489,9 +493,13 @@
         function hideLoading() { document.getElementById('ai-loading-modal').classList.add('hidden'); }
 
         window.onload = function() {
+            // 註冊 Service Worker，啟動 PWA 安裝與離線機制
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(regs => { for(let reg of regs) reg.unregister(); });
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA 引擎啟動成功！範圍:', reg.scope))
+                    .catch(err => console.log('PWA 引擎啟動失敗:', err));
             }
+            // 載入行程資料
             loadAllTrips();
         };
     </script>
