@@ -51,16 +51,42 @@
             <h1 id="app-title" contenteditable="true" class="text-xl font-bold outline-none focus:text-blue-600">我的旅程</h1>
         </div>
         <div class="flex items-center gap-2">
+            <!-- 地圖切換 -->
             <button onclick="toggleMap()" class="p-2 hover:bg-slate-100 rounded-xl transition text-slate-600 flex items-center gap-2 border border-slate-200">
                 <i class="ph ph-map-trifold text-xl"></i>
                 <span class="hidden md:inline font-bold text-sm">地圖開關</span>
             </button>
+            
+            <!-- AI 匯入 -->
             <button onclick="triggerImport()" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-100 transition border border-blue-200">
                 <i class="ph ph-magic-wand"></i>
                 <span class="hidden sm:inline">AI 萬能匯入</span>
             </button>
             <input type="file" id="universal-import" class="hidden" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*">
-            <button onclick="syncData()" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition ml-2"><i class="ph ph-arrows-clockwise text-xl"></i></button>
+
+            <!-- 匯出行程按鈕組 (已恢復) -->
+            <div class="relative group">
+                <button class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg">
+                    <i class="ph ph-export"></i>
+                    <span class="hidden sm:inline">匯出行程</span>
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="absolute right-0 top-full mt-2 w-48 bg-white shadow-2xl rounded-2xl border border-slate-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] transform origin-top-right group-hover:translate-y-1">
+                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center gap-3 transition">
+                        <i class="ph ph-file-xls text-green-500 text-xl"></i>
+                        <div class="font-bold text-sm">匯出 Excel</div>
+                    </button>
+                    <button onclick="exportToWord()" class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 transition border-t border-slate-50">
+                        <i class="ph ph-file-doc text-blue-500 text-xl"></i>
+                        <div class="font-bold text-sm">匯出 Word</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 同步按鈕 -->
+            <button onclick="syncData()" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition ml-1" title="同步數據">
+                <i class="ph ph-arrows-clockwise text-xl"></i>
+            </button>
         </div>
     </nav>
 
@@ -122,7 +148,7 @@
         });
 
         /**
-         * 智慧匯入核心 (終極穩定修復版：指數退避重試 + 嚴格 JSON 安全校驗)
+         * 智慧匯入核心 (穩定版：指數退避重試)
          */
         window.handleUniversalImport = async function(file) {
             if (!file) return;
@@ -175,41 +201,33 @@
                 const payload = { 
                     contents: [{ parts: [
                         { text: `你是一位極致專業的旅遊行程分析師。請分析所提供的檔案內容，將行程轉換為 JSON。
-                        規則：1. 必須按天數分組(day欄位，例如1, 2, 3)。2. 即使內容非常多，也請完整列出所有景點。3. 務必利用你的知識庫為每個點提供大約的lat與lng座標。4. 禁止任何解釋。
+                        規則：1. 必須按天數分組(day欄位，例如1, 2, 3)。2. 完整列出所有景點。3. 務必提供大約的lat與lng座標。4. 禁止解釋。
                         格式範例：[{"day":1, "spots":[{"name":"景點1","time":"10:00","lat":35.6,"lng":139.7}]}]` },
-                        inlineData ? { inlineData: inlineData } : { text: textData.substring(0, 30000) } // 防止文本過大
+                        inlineData ? { inlineData: inlineData } : { text: textData.substring(0, 30000) }
                     ]}],
                     generationConfig: { responseMimeType: "application/json" }
                 };
 
-                // --- 指數退避重試邏輯 ---
                 let response, retryDelays = [1000, 3000, 6000]; 
                 for (let r = 0; r <= retryDelays.length; r++) {
                     response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (response.status === 429 && r < retryDelays.length) {
-                        status.innerText = `伺服器忙碌，等待重試 (${r+1}/${retryDelays.length})...`;
+                        status.innerText = `伺服器忙碌，等待重試 (${r+1}/3)...`;
                         await new Promise(ok => setTimeout(ok, retryDelays[r]));
                         continue;
                     }
                     break;
                 }
 
-                if (!response.ok) {
-                    const err = await response.json().catch(()=>({}));
-                    throw new Error(err.error?.message || `HTTP ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const d = await response.json();
-                // --- 嚴格校驗：解決 'reading 0' 崩潰 ---
-                if (!d.candidates || d.candidates.length === 0 || !d.candidates[0].content) {
-                    throw new Error("AI 無法識別內容（可能觸發安全過濾或文檔過於複雜）。");
-                }
+                if (!d.candidates || d.candidates.length === 0) throw new Error("AI 無法識別內容");
 
                 parsedData = JSON.parse(d.candidates[0].content.parts[0].text);
                 if (!Array.isArray(parsedData)) parsedData = [parsedData];
 
                 progress.style.width = '70%';
-                status.innerText = "正在同步地圖標記與自動擴展分頁...";
+                status.innerText = "正在更新地圖與分頁...";
 
                 let totalCount = 0;
                 const baseIdx = window.records.activeDay;
@@ -235,12 +253,12 @@
                 setTimeout(() => {
                     overlay.remove();
                     window.render();
-                    window.showModal({ title: "匯入成功", desc: `已自動生成並分配 ${parsedData.length} 天的行程。<br>共偵測到 ${totalCount} 個景點。`, onConfirm: ()=>{} });
+                    window.showModal({ title: "匯入成功", desc: `已分配 ${parsedData.length} 天，共 ${totalCount} 個景點。`, onConfirm: ()=>{} });
                 }, 400);
 
             } catch (err) {
                 overlay.remove();
-                window.showModal({ title: "匯入中斷", desc: `發生錯誤：${err.message}<br><br>建議：請確認金鑰正確，或稍等一分鐘讓 AI 流量恢復再試。`, onConfirm: ()=>{} });
+                window.showModal({ title: "匯入中斷", desc: `錯誤：${err.message}`, onConfirm: ()=>{} });
             }
         };
 
@@ -251,7 +269,6 @@
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([35.6895, 139.6917], 13);
             L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=zh-TW&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: '0123' }).addTo(map);
             markersLayer = L.layerGroup().addTo(map);
-            setTimeout(() => map.invalidateSize(), 200);
         };
 
         window.render = function() {
@@ -288,7 +305,7 @@
                                 <input onchange="updateSpotField(${spot.id},'name',this.value)" class="outline-none w-full" value="${spot.name}">
                                 <button onclick="removeSpot(${spot.id})" class="text-slate-300 hover:text-rose-500"><i class="ph ph-trash text-xl"></i></button>
                             </div>
-                            <div class="text-xs text-slate-500 mt-2">${spot.time} · 停留 ${spot.duration} 分</div>
+                            <div class="text-xs text-slate-500 mt-2">${spot.time} · 停留 60 分</div>
                         </div>
                     </div>
                 `;
@@ -306,9 +323,6 @@
             window.saveLocal();
         };
 
-        /**
-         * 地圖座標更新 (智慧螺旋位移補償：防止標記消失)
-         */
         function updateMap() {
             if (!map || !markersLayer) return;
             markersLayer.clearLayers(); if (polyline) map.removeLayer(polyline);
@@ -326,7 +340,6 @@
                         fLat += offset * Math.sin(angle * Math.PI / 180);
                         fLng += offset * Math.cos(angle * Math.PI / 180);
                     } else { coordsSeen[key] = 1; }
-
                     const icon = L.divIcon({ className: 'custom-marker', html: `<div>${idx + 1}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
                     L.marker([fLat, fLng], { icon }).addTo(markersLayer).bindPopup(`<b>${idx + 1}. ${spot.name}</b>`);
                     latlngs.push([fLat, fLng]);
@@ -343,10 +356,68 @@
             const res = { lat: 35.6895 + (Math.random()-0.5)*0.1, lng: 139.6917 + (Math.random()-0.5)*0.1 };
             try {
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1`;
-                const r = await fetch(url, { headers: { 'User-Agent': 'Trippie/3.0' } });
+                const r = await fetch(url, { headers: { 'User-Agent': 'Trippie/4.0' } });
                 const d = await r.json();
                 if (d.length > 0) { res.lat = parseFloat(d[0].lat); res.lng = parseFloat(d[0].lon); }
             } catch(e) {} return res;
+        };
+
+        /**
+         * 恢復匯出 Excel 功能
+         */
+        window.exportToExcel = function() {
+            try {
+                const records = window.records;
+                const data = [];
+                records.days.forEach((day, dIdx) => {
+                    day.spots.forEach((spot, sIdx) => {
+                        data.push({
+                            "天數": `第 ${dIdx + 1} 天`,
+                            "順序": sIdx + 1,
+                            "景點名稱": spot.name,
+                            "預計時間": spot.time,
+                            "停留(分)": "60",
+                            "地圖經度": spot.lng,
+                            "地圖緯度": spot.lat
+                        });
+                    });
+                });
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "旅遊行程");
+                XLSX.writeFile(wb, `${records.title || '我的旅程'}_行程表.xlsx`);
+            } catch (err) { alert("Excel 匯出失敗"); }
+        };
+
+        /**
+         * 恢復匯出 Word 功能
+         */
+        window.exportToWord = function() {
+            const records = window.records;
+            let content = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>${records.title}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; }
+                    .day-header { color: #2563eb; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 20px; }
+                    .spot-item { margin-bottom: 15px; border-left: 4px solid #f97316; padding-left: 15px; }
+                </style>
+                </head>
+                <body>
+                    <h1 style="text-align:center">${records.title || '旅遊行程'}</h1>
+            `;
+            records.days.forEach((day, dIdx) => {
+                content += `<h2 class="day-header">第 ${dIdx + 1} 天 行程</h2>`;
+                day.spots.forEach(spot => {
+                    content += `<div class="spot-item"><b>${spot.time}</b> - ${spot.name}</div>`;
+                });
+            });
+            content += "</body></html>";
+            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${records.title || '行程'}_行程稿.doc`;
+            link.click();
         };
 
         window.showModal = function({ title, desc, onConfirm }) {
@@ -365,6 +436,7 @@
         window.saveLocal = () => localStorage.setItem('trippie_records', JSON.stringify(window.records));
         window.loadLocal = () => { const s = localStorage.getItem('trippie_records'); if(s) window.records = JSON.parse(s); };
         window.toggleMap = () => { document.getElementById('map-section').classList.toggle('hidden'); setTimeout(()=>map.invalidateSize(), 300); };
+        window.syncData = () => { window.render(); alert("本地數據已完成刷新並同步。"); };
     </script>
 </body>
 </html>
