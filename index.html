@@ -114,7 +114,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script type="module">
-        import { GoogleGenAI } from "https://esm.run/@google/genai";
+        // 【修復重點 1】：改為引入與你現有語法完全相容的經典版 SDK
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
         window.handleUniversalImport = async function(file) {
             if (!file) return;
@@ -132,20 +133,21 @@
 
             try {
                 // API KEY 獲取邏輯
-                let apiKey = "[[GEMINI_API_KEY]]"; // 嘗試環境變數
+                let apiKey = "[[GEMINI_API_KEY]]"; 
                 if (typeof process !== 'undefined' && process.env.GEMINI_API_KEY) {
                     apiKey = process.env.GEMINI_API_KEY;
                 } else if (apiKey === "[[GEMINI_API_KEY]]" || apiKey === "") {
                     apiKey = localStorage.getItem('trippie_api_key');
                     if (!apiKey) {
                         apiKey = prompt("請輸入您的 Gemini API Key 以啟用 AI 功能：");
-                        if (apiKey) localStorage.setItem('trippie_api_key', apiKey);
+                        if (apiKey) localStorage.setItem('trippie_api_key', apiKey.trim());
                     }
                 }
 
                 if (!apiKey) throw new Error("缺少 API Key");
 
-                const genAI = new GoogleGenAI(apiKey);
+                // 【修復重點 2】：使用正確的 GoogleGenerativeAI 類別進行初始化
+                const genAI = new GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({ 
                     model: "gemini-1.5-flash",
                     generationConfig: { responseMimeType: "application/json" }
@@ -187,7 +189,6 @@
                 const result = await model.generateContent([contentPart, { text: promptText }]);
                 const parsedData = JSON.parse(result.response.text());
 
-                // 進行地理定位與處理
                 const finalDays = await Promise.all(parsedData.map(async (dGroup) => {
                     const spots = await Promise.all(dGroup.spots.map(async (s) => {
                         const info = await window.fetchPlaceInfo(s.name);
@@ -197,8 +198,8 @@
                             time: s.time || "10:00",
                             duration: s.duration || "60",
                             img: info.img,
-                            lat: info.lat || 36.5613, // 金澤預設緯度
-                            lng: info.lng || 136.6562  // 金澤預設經度
+                            lat: info.lat || 36.5613,
+                            lng: info.lng || 136.6562 
                         };
                     }));
                     return { spots };
@@ -223,7 +224,15 @@
             } catch (err) {
                 console.error(err);
                 overlay.remove();
-                alert("解析失敗，請確認 API Key 有效或文件內容正常。");
+                
+                // 【修復重點 3】：金鑰失效防呆機制，若發生授權錯誤自動清除紀錄
+                const errorMsg = err.message || "";
+                if (errorMsg.includes("API key not valid") || errorMsg.includes("API Key") || errorMsg.includes("403") || errorMsg.includes("400")) {
+                    localStorage.removeItem('trippie_api_key');
+                    alert("⚠️ 錯誤：API 金鑰無效或授權失敗！\n\n系統已自動為您清除錯誤的金鑰紀錄。請重新點擊「匯入按鈕」並貼上正確的 Gemini API 金鑰。");
+                } else {
+                    alert("解析失敗，請確認文件內容是否正常。錯誤詳情：" + errorMsg);
+                }
             }
         };
 
