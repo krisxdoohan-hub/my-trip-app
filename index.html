@@ -66,7 +66,6 @@
                 <i class="ph ph-magic-wand"></i>
                 <span class="hidden sm:inline">AI 萬能匯入</span>
             </button>
-            <!-- 修改 accept 以支援原版所有格式 -->
             <input type="file" id="universal-import" class="hidden" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*">
             
             <!-- 匯出按鈕 -->
@@ -170,7 +169,7 @@
         </div>
     </main>
 
-    <!-- 自定義對話框 (替代 prompt/confirm) -->
+    <!-- 自定義對話框 -->
     <div id="modal-container" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
         <div class="bg-white rounded-2xl p-6 w-80 shadow-2xl transform scale-90 transition-transform duration-200" id="modal-content">
             <h3 id="modal-title" class="text-lg font-bold mb-2">確認視窗</h3>
@@ -188,12 +187,53 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Gemini SDK & AI Logic (融合原版匯入邏輯) -->
-    <script type="module">
-        import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
+    <!-- 核心應用程式邏輯 -->
+    <script>
+        const GEN_AI_KEY = ""; 
+        
+        /**
+         * 全域狀態
+         */
+        window.records = {
+            title: "我的台北行程",
+            activeDay: 0,
+            days: [
+                {
+                    spots: [
+                        { id: 1, name: "台北 101", time: "18:00", duration: "90", img: "https://images.unsplash.com/photo-1552912019-ad300259943b?w=800", lat: 25.0336, lng: 121.5646 },
+                        { id: 2, name: "中正紀念堂", time: "14:00", duration: "60", img: "https://images.unsplash.com/photo-1549487353-29471329c3ae?w=800", lat: 25.0346, lng: 121.5218 }
+                    ]
+                }
+            ],
+            config: {
+                ghToken: "",
+                ghRepo: "",
+                ghPath: "travel-data.json"
+            }
+        };
 
-        const GEN_AI_KEY = "[[GEMINI_API_KEY]]"; 
-        const ai = new GoogleGenAI(typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : GEN_AI_KEY);
+        let map;
+        let markersLayer;
+        let polyline;
+
+        window.onload = () => {
+            initMap();
+            window.loadLocal();
+            window.render();
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch(console.error);
+            }
+        };
+
+        // 監聽文件選擇 (綁定匯入事件)
+        document.getElementById('universal-import').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                window.handleUniversalImport(e.target.files[0]);
+                e.target.value = ''; // 重置 file input
+            }
+        });
+
+        window.triggerImport = () => document.getElementById('universal-import').click();
 
         /**
          * 智慧匯入核心邏輯 (融合原版多格式支援與動態金鑰)
@@ -201,7 +241,6 @@
         window.handleUniversalImport = async function(file) {
             if (!file) return;
 
-            // 建立新版動畫進度條
             const overlay = document.createElement('div');
             overlay.className = "fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-6 transition-all duration-300";
             overlay.innerHTML = `
@@ -227,7 +266,7 @@
             try {
                 progress.style.width = '15%';
                 
-                // --- 移植原版 API Key 邏輯 ---
+                // 動態 API Key 邏輯
                 let apiKey = localStorage.getItem('chicTrip_api_key') || GEN_AI_KEY;
                 if (!apiKey || apiKey === "[[GEMINI_API_KEY]]" || apiKey.trim() === "") {
                     apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
@@ -242,7 +281,6 @@
                 const ext = file.name.split('.').pop().toLowerCase();
                 let aiSpots = [];
 
-                // --- 移植原版各格式解析邏輯 ---
                 if (ext === 'xlsx' || ext === 'xls') {
                     status.innerText = "正在解析 Excel 結構...";
                     const data = await file.arrayBuffer();
@@ -327,7 +365,6 @@
 
                 if (!Array.isArray(aiSpots)) { aiSpots = [aiSpots]; }
 
-                // --- 銜接新版的後續處理 ---
                 progress.style.width = '80%';
                 status.innerText = "正在為景點定位座標與匹配封面圖...";
 
@@ -376,50 +413,6 @@
                 reader.onerror = error => reject(error);
             });
         }
-
-        // 監聽文件選擇
-        document.getElementById('universal-import').addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                window.handleUniversalImport(e.target.files[0]);
-                e.target.value = ''; // 重置 file input
-            }
-        });
-    </script>
-
-    <script>
-        /**
-         * 全域狀態
-         */
-        window.records = {
-            title: "我的台北行程",
-            activeDay: 0,
-            days: [
-                {
-                    spots: [
-                        { id: 1, name: "台北 101", time: "18:00", duration: "90", img: "https://images.unsplash.com/photo-1552912019-ad300259943b?w=800", lat: 25.0336, lng: 121.5646 },
-                        { id: 2, name: "中正紀念堂", time: "14:00", duration: "60", img: "https://images.unsplash.com/photo-1549487353-29471329c3ae?w=800", lat: 25.0346, lng: 121.5218 }
-                    ]
-                }
-            ],
-            config: {
-                ghToken: "",
-                ghRepo: "",
-                ghPath: "travel-data.json"
-            }
-        };
-
-        let map;
-        let markersLayer;
-        let polyline;
-
-        window.onload = () => {
-            initMap();
-            window.loadLocal();
-            window.render();
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js').catch(console.error);
-            }
-        };
 
         // 天數切換
         window.records.activeDay = 0;
@@ -798,8 +791,6 @@
             };
             reader.readAsDataURL(file);
         }
-
-        window.triggerImport = () => document.getElementById('universal-import').click();
 
         window.exportToExcel = function() {
             try {
