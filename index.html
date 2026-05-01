@@ -3,505 +3,975 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放分自我</title>
-    
+    <title>Trippie - 旅遊行程規劃器</title>
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#1e3a8a">
-    <link rel="apple-touch-icon" href="./icon-192.png">
-
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <!-- Excel Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Mammoth (移植原版：用於解析 Word DOCX) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .dragging { opacity: 0.4; background-color: #eff6ff; border: 2px dashed #3b82f6; }
-        .drag-over { border-top: 3px solid #3B82F6; }
-        body { background-color: #f8fafc; }
-        #trip-title-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .map-container { height: 100%; width: 100%; transition: all 0.3s ease; }
+        .sidebar { scrollbar-width: thin; scrollbar-color: #e5e7eb transparent; }
+        .spot-card:hover .delete-btn { opacity: 1; }
+        #map { z-index: 1; height: 100%; width: 100%; background: #f8fafc; }
+        #map-section { position: relative; transition: all 0.3s ease; }
+        
+        /* 響應式佈局調整 */
+        @media (max-width: 1024px) {
+            main { flex-direction: column; }
+            #map-section { height: 40vh; min-height: 250px; width: 100% !important; flex-shrink: 0; }
+            #itinerary-section { width: 100% !important; flex-grow: 1; border-l: 0; border-t: 1px solid #e2e8f0; }
+        }
+
+        .custom-marker {
+            background-color: #f97316;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-weight: bold;
+            line-height: 24px;
+            border: 2px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
     </style>
+
 </head>
+<body class="bg-slate-50 text-slate-900 overflow-hidden h-screen flex flex-col">
 
-<body class="flex items-center justify-center h-screen font-sans text-slate-800">
-
-    <div class="bg-white w-full max-w-md md:max-w-2xl lg:max-w-5xl h-full flex flex-col shadow-2xl relative overflow-hidden transition-all duration-300">
-
-        <div class="p-3 bg-blue-900 text-white font-bold flex justify-between items-center shadow-lg z-40">
-            <div class="flex items-center gap-2 flex-1 overflow-hidden">
-                <i class="fas fa-map-marked-alt text-blue-300"></i>
-                <input id="trip-title-input" 
-                       class="bg-transparent border-none outline-none text-white font-bold text-base w-full focus:ring-0 truncate" 
-                       value="我的旅遊行程" 
-                       oninput="saveCurrentTripState()"
-                       placeholder="行程標題...">
-            </div>
+    <!-- 導覽列 -->
+    <nav class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 shadow-sm z-50">
+        <div class="flex items-center gap-2">
+            <i class="ph-fill ph-map-trifold text-blue-600 text-3xl"></i>
+            <h1 id="app-title" contenteditable="true" class="text-xl font-bold tracking-tight outline-none focus:text-blue-600">我的東京之旅</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- 地圖切換 -->
+            <button onclick="toggleMap()" class="p-2 hover:bg-slate-100 rounded-xl transition text-slate-600 flex items-center gap-2 border border-slate-200" title="切換地圖模式">
+                <i class="ph ph-map-trifold text-xl"></i>
+                <span class="hidden md:inline font-bold text-sm">地圖開關</span>
+            </button>
             
-            <div class="flex items-center gap-1.5 ml-2">
-                <input type="file" id="import-file" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*" class="hidden" onchange="handleImport(event)">
-                
-                <button onclick="openTripManager()" class="bg-amber-500 hover:bg-amber-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="行程庫">
-                    <i class="fas fa-folder-open text-[10px]"></i>
-                </button>
-                <button onclick="createNewTrip()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="開新">
-                    <i class="fas fa-file-circle-plus text-[10px]"></i>
-                </button>
-                <button onclick="deleteCurrentTrip()" class="bg-rose-500 hover:bg-rose-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="刪除本檔">
-                    <i class="fas fa-trash-can text-[10px]"></i>
-                </button>
-                <button onclick="triggerImport()" class="bg-teal-500 hover:bg-teal-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="匯入">
-                    <i class="fas fa-file-import text-[10px]"></i>
-                </button>
-                <button onclick="openExportModal()" class="bg-indigo-500 hover:bg-indigo-400 text-white w-7 h-7 rounded-full shadow flex items-center justify-center transition active:scale-90" title="匯出">
-                    <i class="fas fa-file-export text-[10px]"></i>
-                </button>
-                <button onclick="addDay()" class="bg-blue-500 hover:bg-blue-400 text-white w-7 h-7 rounded-full shadow-lg flex items-center justify-center transition active:scale-90" title="加天數">
-                    <i class="fas fa-plus text-[10px]"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="bg-blue-800 flex items-center relative z-30 shadow-inner group">
-            <button onclick="scrollTabs('left')" class="absolute left-0 z-10 bg-blue-900/50 text-white w-6 h-full opacity-0 group-hover:opacity-100 transition">
-                <i class="fas fa-chevron-left text-[10px]"></i>
+            <!-- 智慧匯入按鈕 -->
+            <button onclick="triggerImport()" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-100 transition border border-blue-200" title="智慧匯入">
+                <i class="ph ph-magic-wand"></i>
+                <span class="hidden sm:inline">AI 萬能匯入</span>
             </button>
-            <div id="tabs-container" class="flex-1 flex items-center overflow-x-auto no-scrollbar px-2 py-3 gap-2 scroll-smooth"></div>
-            <button onclick="scrollTabs('right')" class="absolute right-0 z-10 bg-blue-900/50 text-white w-6 h-full opacity-0 group-hover:opacity-100 transition">
-                <i class="fas fa-chevron-right text-[10px]"></i>
+            <!-- 修改 accept 以支援原版所有格式 -->
+            <input type="file" id="universal-import" class="hidden" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*">
+            
+            <!-- 匯出按鈕 -->
+            <div class="relative group">
+                <button class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg">
+                    <i class="ph ph-export"></i>
+                    <span class="hidden sm:inline">匯出行程</span>
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="absolute right-0 top-full mt-2 w-48 bg-white shadow-2xl rounded-2xl border border-slate-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] transform origin-top-right group-hover:translate-y-1">
+                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center gap-3 transition">
+                        <i class="ph ph-file-xls text-green-500 text-xl"></i>
+                        <div>
+                            <div class="font-bold text-sm">匯出 Excel</div>
+                            <div class="text-[10px] text-slate-400 font-normal">適合數據整理</div>
+                        </div>
+                    </button>
+                    <button onclick="exportToWord()" class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 transition border-t border-slate-50">
+                        <i class="ph ph-file-doc text-blue-500 text-xl"></i>
+                        <div>
+                            <div class="font-bold text-sm">匯出 Word</div>
+                            <div class="text-[10px] text-slate-400 font-normal">適合自由編輯</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="toggleCloudSettings()" class="p-2 hover:bg-slate-100 rounded-full transition ml-2" title="GitHub 同步">
+                <i class="ph ph-cloud-arrow-up text-xl text-slate-400"></i>
+            </button>
+            <button onclick="syncData()" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition" title="同步備份">
+                <i class="ph ph-arrows-clockwise text-xl"></i>
             </button>
         </div>
+    </nav>
 
-        <div class="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-3" id="itinerary-list"></div>
-
-        <div class="p-4 bg-white border-t border-gray-100 shadow-md z-40">
-            <div class="flex gap-2">
-                <input id="new-spot-name" class="border border-gray-200 rounded-lg p-3 flex-1 focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-sm" placeholder="輸入景點名稱...">
-                <button onclick="addCustomSpot()" class="bg-blue-700 hover:bg-blue-800 text-white px-5 rounded-lg font-bold text-xs transition active:scale-95">新增</button>
-            </div>
+    <!-- 雲端設定區 -->
+    <div id="cloud-sidebar" class="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[60] transform translate-x-full transition-transform duration-300 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-bold">GitHub 雲端同步設定</h2>
+            <button onclick="toggleCloudSettings()"><i class="ph ph-x text-2xl"></i></button>
         </div>
-
-        <div id="ai-loading-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden z-[60]">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-400 mb-6"></div>
-            <h3 class="text-lg font-bold text-white mb-2 animate-pulse">正在精準解析行程...</h3>
-            <p class="text-slate-400 text-xs text-center px-6">AI 正使用正式版模型解析中</p>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">GitHub Token</label>
+                <input id="gh-token" type="password" class="w-full border p-2 rounded-lg" placeholder="ghp_xxxx">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">GitHub 帳號/專案名</label>
+                <input id="gh-repo" type="text" class="w-full border p-2 rounded-lg" placeholder="username/repo">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">儲存檔名</label>
+                <input id="gh-path" type="text" class="w-full border p-2 rounded-lg" value="travel-data.json">
+            </div>
+            <button onclick="saveConfig()" class="w-full bg-slate-800 text-white py-2 rounded-lg hover:bg-slate-900 transition">儲存設定</button>
+            <p class="text-xs text-slate-400">設定將儲存於瀏覽器，同步後數據將永久存儲於您的 GitHub 倉庫。</p>
         </div>
     </div>
 
-    <div id="custom-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-[70] p-6">
-        <div class="bg-white rounded-xl p-6 w-full max-w-xs shadow-2xl">
-            <h3 id="modal-title" class="text-lg font-bold mb-2 text-slate-800"></h3>
-            <div id="modal-message" class="text-slate-500 mb-6 text-sm leading-relaxed"></div>
-            <div class="flex justify-end gap-3" id="modal-actions"></div>
+    <!-- 主顯示區 -->
+    <main class="flex-grow flex overflow-hidden">
+        
+        <!-- 左側：地圖區 -->
+        <div id="map-section" class="flex-grow relative h-full border-r border-slate-200">
+            <div id="map" class="w-full h-full"></div>
+            <!-- 地圖覆蓋按鈕 -->
+            <div class="absolute bottom-6 left-6 z-40 bg-white p-2 rounded-xl shadow-lg border border-slate-200 flex flex-col gap-2">
+                <button onclick="mapView.zoomIn()" class="p-2 hover:bg-slate-100 rounded-lg" title="放大"><i class="ph ph-plus"></i></button>
+                <button onclick="mapView.zoomOut()" class="p-2 hover:bg-slate-100 rounded-lg" title="縮小"><i class="ph ph-minus"></i></button>
+                <button onclick="updateMap()" class="p-2 hover:bg-slate-100 rounded-lg border-t border-slate-100" title="自適應視角"><i class="ph ph-arrows-out"></i></button>
+            </div>
+        </div>
+
+        <!-- 右側：行程編輯區 -->
+        <div id="itinerary-section" class="w-full lg:w-[500px] border-l border-slate-200 bg-white flex flex-col shrink-0 h-full">
+            
+            <!-- 天數切換 -->
+            <div class="border-b border-slate-100 px-4 py-2 flex items-center justify-between bg-slate-50 shrink-0">
+                <div class="flex gap-2 overflow-x-auto select-none no-scrollbar" id="day-tabs">
+                    <!-- Tabs generated by JS -->
+                </div>
+                <div class="flex gap-1 ml-2">
+                    <button onclick="addDay()" class="p-1.5 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200"><i class="ph ph-plus-circle"></i></button>
+                    <button onclick="removeDay()" class="p-1.5 bg-rose-100 text-rose-600 rounded-md hover:bg-rose-200 text-xs"><i class="ph ph-trash"></i></button>
+                </div>
+            </div>
+
+            <!-- 行程內容 -->
+            <div id="itinerary-list" class="flex-grow overflow-y-auto p-6 sidebar space-y-8">
+                <!-- Day content generated by JS -->
+            </div>
+
+            <!-- 底部動作 -->
+            <div class="p-4 border-t border-slate-100 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onclick="addSpot()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    <i class="ph ph-plus-bold"></i>
+                    <span>新增景點行程</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 自定義對話框 (替代 prompt/confirm) -->
+    <div id="modal-container" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-2xl p-6 w-80 shadow-2xl transform scale-90 transition-transform duration-200" id="modal-content">
+            <h3 id="modal-title" class="text-lg font-bold mb-2">確認視窗</h3>
+            <p id="modal-desc" class="text-slate-500 mb-6">您確定要執行此操作嗎？</p>
+            <div id="modal-input-area" class="hidden mb-4">
+                <input id="modal-input" type="text" class="w-full border p-2 rounded-lg outline-none focus:border-blue-500" placeholder="請輸入內容...">
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button id="modal-cancel" class="px-4 py-2 text-slate-400 font-medium font-bold">取消</button>
+                <button id="modal-confirm" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold active:scale-95 transition-transform">確定</button>
+            </div>
         </div>
     </div>
 
-    <div id="trip-manager-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-[70] p-4">
-        <div class="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col max-h-[80vh] shadow-2xl">
-            <div class="flex justify-between items-center mb-4 border-b pb-3 text-slate-800 font-bold">
-                <h3 class="text-lg">行程檔案庫</h3>
-                <button onclick="closeTripManager()" class="text-slate-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="trip-list-container" class="flex-1 overflow-y-auto space-y-2 no-scrollbar"></div>
-        </div>
-    </div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <div id="export-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-[70] p-6">
-        <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
-            <div class="flex justify-between items-center mb-4 text-slate-800 font-bold">
-                <h3 class="text-lg">匯出行程表</h3>
-                <button onclick="closeExportModal()" class="text-slate-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="space-y-3 mb-6">
-                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                    <input type="radio" name="export-format" value="pdf" checked>
-                    <span class="ml-3 text-sm font-bold">PDF 文件</span>
-                </label>
-                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                    <input type="radio" name="export-format" value="word">
-                    <span class="ml-3 text-sm font-bold">Word (DOC)</span>
-                </label>
-                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                    <input type="radio" name="export-format" value="excel">
-                    <span class="ml-3 text-sm font-bold">Excel (XLSX)</span>
-                </label>
-            </div>
-            <button onclick="executeExport()" class="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-lg transition active:scale-95">確認下載</button>
-        </div>
-    </div>
+    <!-- Gemini SDK & AI Logic (融合原版匯入邏輯) -->
+    <script type="module">
+        import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
 
-    <script>
-        // --- 狀態管理 ---
-        let allTrips = []; 
-        let currentTripId = null;
-        let tripData = []; 
-        let currentDayIndex = 0;
-        let draggedElement = null;
+        const GEN_AI_KEY = "[[GEMINI_API_KEY]]"; 
+        const ai = new GoogleGenAI(typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : GEN_AI_KEY);
 
-        function generateId() { return 'id_' + Date.now() + '_' + Math.floor(Math.random() * 100000); }
+        /**
+         * 智慧匯入核心邏輯 (融合原版多格式支援與動態金鑰)
+         */
+        window.handleUniversalImport = async function(file) {
+            if (!file) return;
 
-        // --- 存儲管理 ---
-        function loadAllTrips() {
+            // 建立新版動畫進度條
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-6 transition-all duration-300";
+            overlay.innerHTML = `
+                <div class="bg-white rounded-[40px] px-10 py-12 flex flex-col items-center gap-8 text-center shadow-2xl scale-95 animate-in zoom-in duration-300 max-w-sm">
+                    <div class="relative">
+                        <div class="w-24 h-24 rounded-full border-4 border-blue-50 border-t-blue-600 animate-spin"></div>
+                        <i class="ph-bold ph-sparkle text-4xl text-blue-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-slate-900 mb-2">AI 正在解析您的檔案</div>
+                        <div id="ai-status" class="text-slate-500 font-medium">正在掃描「${file.name}」中的旅遊資訊...</div>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div id="ai-progress" class="bg-blue-600 h-full w-0 transition-all duration-700 ease-out"></div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const status = document.getElementById('ai-status');
+            const progress = document.getElementById('ai-progress');
+
             try {
-                const saved = localStorage.getItem('chicTrip_all_trips');
-                if (saved) allTrips = JSON.parse(saved);
-                currentTripId = localStorage.getItem('chicTrip_current_id');
-                if (!currentTripId || !allTrips.find(t => t.id === currentTripId)) {
-                    if (allTrips.length > 0) switchTrip(allTrips[0].id);
-                    else createNewTrip(true);
-                } else { switchTrip(currentTripId); }
-            } catch (e) { createNewTrip(true); }
-        }
-
-        function saveAllTrips() {
-            localStorage.setItem('chicTrip_all_trips', JSON.stringify(allTrips));
-            if (currentTripId) localStorage.setItem('chicTrip_current_id', currentTripId);
-        }
-
-        function saveCurrentTripState() {
-            if (!currentTripId) return;
-            const trip = allTrips.find(t => t.id === currentTripId);
-            if (trip) {
-                trip.title = document.getElementById('trip-title-input').value || "我的行程";
-                trip.data = tripData;
-                trip.updatedAt = Date.now();
-                saveAllTrips();
-            }
-        }
-
-        function createNewTrip(isInit = false) {
-            const newId = generateId();
-            const newTrip = { id: newId, title: "新旅遊行程", data: [{ id: generateId(), dayNameIdentifier: '第 1 天', spots: [] }], updatedAt: Date.now() };
-            allTrips.unshift(newTrip); saveAllTrips();
-            if (!isInit) { switchTrip(newId); showModal('提示', '已建立新行程，舊檔已存檔。', false); }
-        }
-
-        function deleteCurrentTrip() {
-            if (allTrips.length === 0) return;
-            showModal('確認刪除', '確定要將目前的行程檔案徹底刪除？', true, () => {
-                allTrips = allTrips.filter(t => t.id !== currentTripId);
-                if (allTrips.length > 0) switchTrip(allTrips[0].id);
-                else createNewTrip(true);
-                saveAllTrips();
-            });
-        }
-
-        function switchTrip(id) {
-            currentTripId = id;
-            const trip = allTrips.find(t => t.id === id);
-            if (trip) {
-                document.getElementById('trip-title-input').value = trip.title;
-                tripData = JSON.parse(JSON.stringify(trip.data));
-                currentDayIndex = 0; renderAll(); closeTripManager();
-            }
-        }
-
-        function openTripManager() {
-            saveCurrentTripState();
-            const container = document.getElementById('trip-list-container');
-            container.innerHTML = '';
-            allTrips.sort((a,b)=>b.updatedAt - a.updatedAt).forEach(t => {
-                const active = t.id === currentTripId;
-                const style = active ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-white hover:border-blue-300';
-                container.insertAdjacentHTML('beforeend', `<div onclick="switchTrip('${t.id}')" class="p-3 border-2 rounded-xl mb-2 cursor-pointer transition ${style}"><div class="font-bold text-sm truncate text-slate-700">${t.title}</div><div class="text-[10px] text-slate-400 mt-1">${t.data.length} 天 | ${new Date(t.updatedAt).toLocaleString()}</div></div>`);
-            });
-            document.getElementById('trip-manager-modal').classList.remove('hidden');
-        }
-        function closeTripManager() { document.getElementById('trip-manager-modal').classList.add('hidden'); }
-
-        // --- 輔助解析 ---
-        function extractTime(text) {
-            const m = (text||"").match(/(?:(上午|下午|AM|PM)\s*)?([01]?[0-9]|2[0-3])[:：點]\s*([0-5][0-9])/i);
-            if (m) {
-                let h = parseInt(m[2], 10), min = parseInt(m[3], 10);
-                if (m[1] && (m[1].includes('下') || m[1].toUpperCase()==='PM') && h < 12) h += 12;
-                return h * 60 + min; 
-            }
-            return 9999;
-        }
-
-        // --- AI 核心 (動態金鑰安全版) ---
-        async function callGeminiAI(input, mime, isImg) {
-            let apiKey = localStorage.getItem('chicTrip_api_key');
-
-            if (!apiKey) {
-                apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
-                if (!apiKey || apiKey.trim() === '') {
-                    alert('必須提供 API Key 才能執行 AI 解析功能。');
-                    return;
+                progress.style.width = '15%';
+                
+                // --- 移植原版 API Key 邏輯 ---
+                let apiKey = localStorage.getItem('chicTrip_api_key') || GEN_AI_KEY;
+                if (!apiKey || apiKey === "[[GEMINI_API_KEY]]" || apiKey.trim() === "") {
+                    apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
+                    if (!apiKey || apiKey.trim() === '') {
+                        overlay.remove();
+                        alert('必須提供 API Key 才能執行 AI 解析功能。');
+                        return;
+                    }
+                    localStorage.setItem('chicTrip_api_key', apiKey.trim());
                 }
-                localStorage.setItem('chicTrip_api_key', apiKey.trim());
-            }
 
-            showLoading();
-            
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-            
-            const payload = { 
-                contents: [{
-                    parts: [
-                        {
-                            text: `
-你是行程解析引擎，只能輸出 JSON，禁止任何說明文字。
+                const ext = file.name.split('.').pop().toLowerCase();
+                let aiSpots = [];
 
+                // --- 移植原版各格式解析邏輯 ---
+                if (ext === 'xlsx' || ext === 'xls') {
+                    status.innerText = "正在解析 Excel 結構...";
+                    const data = await file.arrayBuffer();
+                    const wb = window.XLSX.read(data);
+                    const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                    
+                    rows.forEach(r => {
+                        const spotName = r['景點名稱'] || r['景點'] || r['Spot'];
+                        if(!spotName) return;
+                        aiSpots.push({
+                            name: spotName,
+                            time: r['預計時間'] || r['時間'] || "10:00",
+                            duration: r['停留(分)'] || r['停留時間'] || "60"
+                        });
+                    });
+                    progress.style.width = '50%';
+
+                } else {
+                    let inlineData = null;
+                    let textData = null;
+
+                    if (file.type.startsWith('image/') || ext === 'pdf') {
+                        status.innerText = "正在讀取圖像/PDF內容...";
+                        const base64 = await toBase64(file);
+                        inlineData = { mimeType: file.type || 'application/pdf', data: base64.split(',')[1] };
+                    } else if (ext === 'docx') {
+                        status.innerText = "正在讀取 Word 文件內容...";
+                        const data = await file.arrayBuffer();
+                        const res = await mammoth.extractRawText({arrayBuffer: data});
+                        textData = res.value;
+                    } else { 
+                        status.innerText = "正在讀取純文字內容...";
+                        textData = await file.text();
+                    }
+
+                    progress.style.width = '40%';
+                    status.innerText = "Gemini AI 正在深入識別內容...";
+
+                    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                    const payload = { 
+                        contents: [{
+                            parts: [
+                                {
+                                    text: `你是行程解析引擎，只能輸出 JSON，禁止任何說明文字。
 格式如下：
 [
-  {
-    "dayNameIdentifier": "第 1 天",
-    "spots": [
-      {"name": "景點名稱", "desc": "備註"}
-    ]
-  }
+  {"name": "景點名稱", "time": "預計時間(HH:mm,預設10:00)", "duration": "停留分鐘(預設60)"}
 ]
-
 規則：
 1. 僅輸出 JSON
 2. 不要 \`\`\` 包裹
-3. 不要解釋
-`
-                        },
-                        isImg 
-                            ? { inlineData: { mimeType: mime, data: input } } 
-                            : { text: input }
+3. 不要解釋`
+                                },
+                                inlineData ? { inlineData: inlineData } : { text: textData ? `行程檔案內容：\n${textData}` : "" }
+                            ]
+                        }]
+                    };
+
+                    const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 403 || response.status === 400) {
+                            localStorage.removeItem('chicTrip_api_key'); 
+                        }
+                        throw new Error(`HTTP 錯誤狀態: ${response.status}`);
+                    }
+
+                    const d = await response.json();
+                    let responseText = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    responseText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+                    try { 
+                        aiSpots = JSON.parse(responseText); 
+                    } catch (err) { 
+                        throw new Error('AI 回傳的 JSON 解析失敗'); 
+                    }
+                }
+
+                if (!Array.isArray(aiSpots)) { aiSpots = [aiSpots]; }
+
+                // --- 銜接新版的後續處理 ---
+                progress.style.width = '80%';
+                status.innerText = "正在為景點定位座標與匹配封面圖...";
+
+                const processedSpots = await Promise.all(aiSpots.map(async (s) => {
+                    const info = await window.fetchPlaceInfo(s.name);
+                    return {
+                        id: Date.now() + Math.random(),
+                        name: s.name,
+                        time: s.time || "10:00",
+                        duration: s.duration || "60",
+                        img: info.img || `https://source.unsplash.com/featured/?${encodeURIComponent(s.name)}`,
+                        lat: info.lat || (25.0478 + (Math.random() - 0.5) * 0.05),
+                        lng: info.lng || (121.5170 + (Math.random() - 0.5) * 0.05)
+                    };
+                }));
+
+                progress.style.width = '100%';
+                setTimeout(() => {
+                    overlay.remove();
+                    if (processedSpots.length === 0) {
+                        alert("抱歉，AI 在此檔案中沒能辨識出具體的行程資訊。");
+                        return;
+                    }
+                    window.showModal({
+                        title: "解析成功",
+                        desc: `已從檔案中提取出 ${processedSpots.length} 個行程景點！要現在加入目前的天數嗎？`,
+                        onConfirm: () => {
+                            window.records.days[window.records.activeDay].spots.push(...processedSpots);
+                            window.render();
+                        }
+                    });
+                }, 300);
+
+            } catch (err) {
+                console.error(err);
+                if (overlay) overlay.remove();
+                alert("解析發生錯誤。可能是檔案格式不支援、API 金鑰失效或請求頻率限制，請稍後重試。");
+            }
+        };
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // 監聽文件選擇
+        document.getElementById('universal-import').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                window.handleUniversalImport(e.target.files[0]);
+                e.target.value = ''; // 重置 file input
+            }
+        });
+    </script>
+
+    <script>
+        /**
+         * 全域狀態
+         */
+        window.records = {
+            title: "我的台北行程",
+            activeDay: 0,
+            days: [
+                {
+                    spots: [
+                        { id: 1, name: "台北 101", time: "18:00", duration: "90", img: "https://images.unsplash.com/photo-1552912019-ad300259943b?w=800", lat: 25.0336, lng: 121.5646 },
+                        { id: 2, name: "中正紀念堂", time: "14:00", duration: "60", img: "https://images.unsplash.com/photo-1549487353-29471329c3ae?w=800", lat: 25.0346, lng: 121.5218 }
                     ]
-                }]
+                }
+            ],
+            config: {
+                ghToken: "",
+                ghRepo: "",
+                ghPath: "travel-data.json"
+            }
+        };
+
+        let map;
+        let markersLayer;
+        let polyline;
+
+        window.onload = () => {
+            initMap();
+            window.loadLocal();
+            window.render();
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch(console.error);
+            }
+        };
+
+        // 天數切換
+        window.records.activeDay = 0;
+
+        function initMap() {
+            try {
+                if (map) return;
+                const mapContainer = document.getElementById('map');
+                if (!mapContainer || mapContainer.offsetHeight === 0) {
+                    setTimeout(initMap, 100);
+                    return;
+                }
+
+                map = L.map('map', { 
+                    zoomControl: false,
+                    attributionControl: false,
+                    scrollWheelZoom: true
+                }).setView([35.6895, 139.6917], 13);
+                
+                L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=zh-TW&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: '0123',
+                    attribution: '© Google Maps'
+                }).addTo(map);
+                
+                markersLayer = L.layerGroup().addTo(map);
+                
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 200);
+            } catch (e) {
+                console.error("Map initialization failed", e);
+            }
+        }
+
+        window.toggleMap = function() {
+            const mapSection = document.getElementById('map-section');
+            const itinerarySection = document.getElementById('itinerary-section');
+            if (!mapSection || !itinerarySection) return;
+
+            const isHidden = mapSection.classList.contains('hidden');
+            
+            if (isHidden) {
+                mapSection.classList.remove('hidden');
+                itinerarySection.classList.add('lg:w-[500px]');
+            } else {
+                mapSection.classList.add('hidden');
+                itinerarySection.classList.remove('lg:w-[500px]');
+            }
+
+            setTimeout(() => {
+                if (!map) initMap();
+                if (map) {
+                    map.invalidateSize();
+                    updateMap();
+                }
+            }, 300);
+        }
+
+        window.addEventListener('resize', () => {
+            if (map) map.invalidateSize();
+        });
+
+        window.mapView = {
+            zoomIn: () => map && map.zoomIn(),
+            zoomOut: () => map && map.zoomOut()
+        };
+
+        window.render = function() {
+            const records = window.records;
+            const titleEl = document.getElementById('app-title');
+            if (titleEl) titleEl.innerText = records.title || "我的旅程";
+            
+            if (records.activeDay >= records.days.length) records.activeDay = 0;
+
+            const tabs = document.getElementById('day-tabs');
+            if (!tabs) return;
+
+            tabs.innerHTML = '';
+            records.days.forEach((day, i) => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 ${records.activeDay === i ? 'bg-blue-600 text-white shadow-lg scale-105' : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'}`;
+                btn.innerText = `第 ${i + 1} 天`;
+                btn.onclick = () => { records.activeDay = i; window.render(); };
+                tabs.appendChild(btn);
+            });
+
+            const list = document.getElementById('itinerary-list');
+            if (!list) return;
+
+            list.innerHTML = `<h2 class="text-2xl font-bold mb-6">第 ${records.activeDay + 1} 天 行程</h2><div id="drag-container" class="space-y-4"></div>`;
+            const dragContainer = document.getElementById('drag-container');
+            
+            const currentDay = records.days[records.activeDay];
+            const currentSpots = currentDay ? currentDay.spots : [];
+            
+            if (currentSpots.length === 0) {
+                dragContainer.innerHTML = `
+                    <div class="text-center py-20 text-slate-400">
+                        <i class="ph ph-package text-5xl mb-2"></i>
+                        <p>今天還沒有景點，按下方按鈕新增！</p>
+                    </div>`;
+            }
+
+            currentSpots.forEach((spot, idx) => {
+                const card = document.createElement('div');
+                card.className = "flex gap-6 relative group spot-card";
+                card.dataset.id = spot.id;
+                card.innerHTML = `
+                    <div class="flex flex-col items-center cursor-grab active:cursor-grabbing drag-handle">
+                        <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold relative z-10 shadow-sm">${idx + 1}</div>
+                        ${idx < currentSpots.length - 1 ? '<div class="w-0.5 h-full bg-slate-200 mt-2"></div>' : ''}
+                    </div>
+                    <div class="flex-grow bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition mb-4">
+                        <div class="flex flex-col sm:flex-row min-h-[120px]">
+                            <div class="sm:w-32 h-32 sm:h-auto relative shrink-0">
+                                <img src="${spot.img}" class="w-full h-full object-cover">
+                                <input type="file" class="hidden" id="file-${spot.id}" onchange="handleImage(${spot.id}, event)">
+                                <button onclick="document.getElementById('file-${spot.id}').click()" class="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs transition">
+                                    <i class="ph ph-camera text-xl"></i>
+                                </button>
+                            </div>
+                            <div class="p-4 flex-grow">
+                                <div class="flex justify-between items-start mb-2 gap-2">
+                                    <input onchange="updateSpotField(${spot.id}, 'name', this.value)" class="text-lg font-bold outline-none block w-full focus:bg-slate-50 p-1 rounded transition border-b border-transparent focus:border-blue-200" value="${spot.name}">
+                                    <button onclick="removeSpot(${spot.id})" class="text-slate-300 hover:text-rose-500 transition shrink-0 p-1">
+                                        <i class="ph ph-trash text-xl"></i>
+                                    </button>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                        <i class="ph ph-clock"></i> 
+                                        <input onchange="updateSpotField(${spot.id}, 'time', this.value)" type="time" value="${spot.time}" class="outline-none bg-transparent">
+                                    </div>
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                        <i class="ph ph-hourglass"></i> 
+                                        停留 <input onchange="updateSpotField(${spot.id}, 'duration', this.value)" type="number" value="${spot.duration}" class="w-10 outline-none bg-transparent text-center"> 分
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                dragContainer.appendChild(card);
+            });
+
+            if (currentSpots.length > 0) {
+                new Sortable(dragContainer, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: (evt) => {
+                        const daySpots = window.records.days[window.records.activeDay].spots;
+                        const [movedItem] = daySpots.splice(evt.oldIndex, 1);
+                        daySpots.splice(evt.newIndex, 0, movedItem);
+                        window.render();
+                    }
+                });
+            }
+
+            updateMap();
+            saveLocal();
+        }
+
+        window.fetchPlaceInfo = async function(name) {
+            const result = { lat: null, lng: null, img: null };
+            try {
+                const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=3&accept-language=zh-TW&addressdetails=1`;
+                const geoRes = await fetch(geoUrl, {
+                    headers: { 'User-Agent': 'TrippieApp/1.0' }
+                });
+                const geoData = await geoRes.json();
+                
+                if (geoData && geoData.length > 0) {
+                    const bestMatch = geoData.find(d => d.type === 'tourism' || d.type === 'attraction' || d.type === 'monument' || d.class === 'tourism') || geoData[0];
+                    result.lat = parseFloat(bestMatch.lat);
+                    result.lng = parseFloat(bestMatch.lon);
+                }
+
+                const sig = Math.floor(Math.random() * 10000);
+                result.img = `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80`;
+                if (name && name.length > 0) {
+                    result.img = `https://loremflickr.com/800/600/${encodeURIComponent(name)},landmark,travel?lock=${sig}`;
+                }
+            } catch (e) {
+                console.error("Place lookup failed", e);
+            }
+            return result;
+        }
+
+        function updateMap() {
+            if (!map || !markersLayer) return;
+            markersLayer.clearLayers();
+            if (polyline) map.removeLayer(polyline);
+
+            const currentDay = window.records.days[window.records.activeDay];
+            const currentSpots = currentDay ? currentDay.spots : [];
+            const latlngs = [];
+            
+            currentSpots.forEach((spot, idx) => {
+                if (spot.lat && spot.lng) {
+                    const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div>${idx + 1}</div>`,
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 14]
+                    });
+                    
+                    const marker = L.marker([spot.lat, spot.lng], { icon })
+                        .addTo(markersLayer)
+                        .bindPopup(`<div class="font-bold p-1">${idx + 1}. ${spot.name}</div>`);
+                    
+                    latlngs.push([spot.lat, spot.lng]);
+                    
+                    marker.on('click', () => {
+                        const spotEls = document.querySelectorAll('.spot-card');
+                        const spotEl = spotEls[idx];
+                        if (spotEl) {
+                            spotEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            spotEl.classList.add('ring-4', 'ring-blue-400', 'ring-offset-2');
+                            setTimeout(() => spotEl.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-2'), 2000);
+                        }
+                    });
+                }
+            });
+
+            if (latlngs.length > 1) {
+                polyline = L.polyline(latlngs, { 
+                    color: '#f97316', 
+                    weight: 3, 
+                    opacity: 0.6, 
+                    dashArray: '8, 8' 
+                }).addTo(map);
+                map.fitBounds(polyline.getBounds(), { padding: [80, 80] });
+            } else if (latlngs.length === 1) {
+                map.setView(latlngs[0], 15);
+            }
+        }
+
+        window.showModal = function({ title, desc, showInput = false, onConfirm }) {
+            const container = document.getElementById('modal-container');
+            const content = document.getElementById('modal-content');
+            const titleEl = document.getElementById('modal-title');
+            const descEl = document.getElementById('modal-desc');
+            const inputArea = document.getElementById('modal-input-area');
+            const input = document.getElementById('modal-input');
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+            input.value = "";
+            
+            if (showInput) inputArea.classList.remove('hidden');
+            else inputArea.classList.add('hidden');
+
+            container.classList.remove('hidden');
+            setTimeout(() => {
+                container.classList.remove('opacity-0');
+                content.classList.remove('scale-90');
+            }, 10);
+
+            const close = () => {
+                container.classList.add('opacity-0');
+                content.classList.add('scale-90');
+                setTimeout(() => container.classList.add('hidden'), 200);
             };
 
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!r.ok) {
-                        const err = await r.json();
-                        throw new Error(`HTTP ${r.status}: ${err.error?.message || '不明錯誤'}`);
-                    }
-                    const d = await r.json();
-                    let txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            confirmBtn.onclick = () => {
+                const val = showInput ? input.value : true;
+                if (showInput && !val) return;
+                if (onConfirm) onConfirm(val);
+                close();
+            };
 
-                    txt = txt.replace(/```json/gi, '').replace(/```/g, '').trim();
+            cancelBtn.onclick = close;
+        }
 
-                    if (!txt) { throw new Error('AI 無回應內容'); }
+        window.addDay = function() {
+            window.records.days.push({ spots: [] });
+            window.records.activeDay = window.records.days.length - 1;
+            window.render();
+        }
 
-                    let parsed;
-                    try { parsed = JSON.parse(txt); } 
-                    catch (err) { throw new Error('JSON 解析失敗'); }
+        window.removeDay = function() {
+            const records = window.records;
+            if (records.days.length <= 1) {
+                window.showModal({ title: "提示", desc: "您至少需要保留一天的行程！", onConfirm: () => {} });
+                return;
+            }
+            window.showModal({
+                title: "刪除確認",
+                desc: `確定要刪除第 ${records.activeDay + 1} 天的所有行程嗎？此操作無法還原。`,
+                onConfirm: () => {
+                    records.days.splice(records.activeDay, 1);
+                    records.activeDay = Math.max(0, records.activeDay - 1);
+                    window.render();
+                }
+            });
+        }
 
-                    if (!Array.isArray(parsed)) { parsed = [parsed]; }
+        window.addSpot = function() {
+            window.showModal({
+                title: "新增景點",
+                desc: "請輸入景點或是行程的目的地名稱：",
+                showInput: true,
+                onConfirm: async (name) => {
+                    const id = Date.now();
+                    const records = window.records;
+                    const currentDay = records.days[records.activeDay];
+                    if (!currentDay) return;
 
-                    mergeIncomingData(parsed);
-                    hideLoading(); 
-                    return; 
+                    const toast = document.createElement('div');
+                    toast.className = "fixed top-20 right-4 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-pulse flex items-center gap-3";
+                    toast.innerHTML = `<i class="ph-bold ph-magnifying-glass"></i> 正在精確定位地圖...`;
+                    document.body.appendChild(toast);
+
+                    const info = await window.fetchPlaceInfo(name);
+                    toast.remove();
+
+                    const currentSpots = currentDay.spots;
+                    const lastSpot = currentSpots.slice(-1)[0];
+                    let baseLat = lastSpot ? lastSpot.lat : 35.6895; 
+                    let baseLng = lastSpot ? lastSpot.lng : 139.6917;
+
+                    const targetLat = info.lat || (baseLat + (Math.random() - 0.5) * 0.05);
+                    const targetLng = info.lng || (baseLng + (Math.random() - 0.5) * 0.05);
+
+                    currentDay.spots.push({
+                        id,
+                        name: name,
+                        time: "10:00",
+                        duration: "60",
+                        img: info.img,
+                        lat: targetLat,
+                        lng: targetLng
+                    });
                     
-                } catch (e) { 
-                    if (i === 4) {
-                        hideLoading();
-                        if (e.message.includes('403') || e.message.includes('API_KEY')) {
-                            localStorage.removeItem('chicTrip_api_key');
-                            showModal('金鑰失效', `API 金鑰無效、外洩或已被官方封鎖。<br><br>系統已清除您的本機紀錄，請重新點擊匯入並輸入新的金鑰。`, false);
-                        } else {
-                            showModal('解析失敗', `原因：${e.message}<br><br>請檢查網路連線或稍後再試。`, false);
-                        }
+                    window.render();
+                    if (map && info.lat) {
+                        map.flyTo([targetLat, targetLng], 15);
                     }
-                    await new Promise(res => setTimeout(res, 1000)); 
+                }
+            });
+        }
+
+        window.removeSpot = function(id) {
+            window.records.days[window.records.activeDay].spots = window.records.days[window.records.activeDay].spots.filter(s => s.id !== id);
+            window.render();
+        }
+
+        window.updateSpotField = async function(id, field, value) {
+            const currentDay = window.records.days[window.records.activeDay];
+            const spot = currentDay.spots.find(s => s.id === id);
+            if (spot) {
+                spot[field] = value;
+                
+                if (field === 'name' && value.trim()) {
+                    const info = await window.fetchPlaceInfo(value);
+                    if (info.lat && info.lng) {
+                        spot.lat = info.lat;
+                        spot.lng = info.lng;
+                        if (info.img) spot.img = info.img;
+                    }
+                }
+                window.render();
+            }
+        }
+
+        window.handleImage = function(id, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                updateSpotField(id, 'img', e.target.result);
+                window.render();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.triggerImport = () => document.getElementById('universal-import').click();
+
+        window.exportToExcel = function() {
+            try {
+                const records = window.records;
+                const data = [];
+                records.days.forEach((day, dIdx) => {
+                    day.spots.forEach((spot, sIdx) => {
+                        data.push({
+                            "天數": `第 ${dIdx + 1} 天`,
+                            "順序": sIdx + 1,
+                            "景點名稱": spot.name,
+                            "預計時間": spot.time,
+                            "停留(分)": spot.duration,
+                            "地圖經度": spot.lng,
+                            "地圖緯度": spot.lat
+                        });
+                    });
+                });
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "旅遊行程");
+                XLSX.writeFile(wb, `${records.title || '行程'}_行程表.xlsx`);
+            } catch (err) {
+                console.error(err);
+                alert("Excel 導出失敗");
+            }
+        }
+
+        window.exportToWord = function() {
+            const records = window.records;
+            let content = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>${records.title}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; }
+                    .day-header { color: #2563eb; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 20px; }
+                    .spot-item { margin-bottom: 15px; border-left: 4px solid #f97316; padding-left: 15px; }
+                    .time { font-weight: bold; color: #64748b; }
+                </style>
+                </head>
+                <body>
+                    <h1 style="text-align:center">${records.title}</h1>
+                    <p style="text-align:right">生成日期: ${new Date().toLocaleDateString()}</p>
+            `;
+
+            records.days.forEach((day, dIdx) => {
+                content += `<h2 class="day-header">第 ${dIdx + 1} 天 行程</h2>`;
+                day.spots.forEach(spot => {
+                    content += `
+                        <div class="spot-item">
+                            <div class="time">${spot.time}</div>
+                            <div style="font-size:18px; font-weight:bold">${spot.name}</div>
+                            <div style="color:#94a3b8">預計停留: ${spot.duration} 分鐘</div>
+                        </div>
+                    `;
+                });
+            });
+            content += "</body></html>";
+            
+            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${records.title || '行程'}_行程稿.doc`;
+            link.click();
+        }
+
+        window.saveLocal = function() {
+            const titleEl = document.getElementById('app-title');
+            if (titleEl) window.records.title = titleEl.innerText;
+            localStorage.setItem('trippie_records', JSON.stringify(window.records));
+        }
+
+        window.loadLocal = function() {
+            const saved = localStorage.getItem('trippie_records');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    window.records = { ...window.records, ...parsed };
+                    if (!window.records.config) window.records.config = { ghToken: "", ghRepo: "", ghPath: "travel-data.json" };
+                    
+                    document.getElementById('gh-token').value = window.records.config.ghToken || "";
+                    document.getElementById('gh-repo').value = window.records.config.ghRepo || "";
+                    document.getElementById('gh-path').value = window.records.config.ghPath || "travel-data.json";
+                } catch (e) {
+                    console.error("Failed to load local data", e);
                 }
             }
         }
 
-        function mergeIncomingData(incomingDays) {
-            incomingDays.forEach(inDay => {
-                let dN = (inDay.dayNameIdentifier||"1").toString().replace(/[第天DayD]/gi, '').trim() || "1";
-                let target = tripData.find(d => d.dayNameIdentifier.includes(dN));
-                if (!target) { target = { id: generateId(), dayNameIdentifier: `第 ${dN} 天`, spots: [] }; tripData.push(target); }
-                (inDay.spots || []).forEach(inSpot => target.spots.push({ id: generateId(), name: inSpot.name, desc: inSpot.desc || '' }));
-            });
-            tripData.forEach(day => day.spots.sort((a,b)=>extractTime(a.name+a.desc)-extractTime(b.name+b.desc)));
-            saveCurrentTripState(); renderAll();
+        window.toggleCloudSettings = function() {
+            const sidebar = document.getElementById('cloud-sidebar');
+            if (sidebar) sidebar.classList.toggle('translate-x-full');
         }
 
-        // --- 介面渲染：手動恢復所有 UI 元件 ---
-        function renderAll() { renderTabs(); renderItinerary(); }
-        
-        function renderTabs() {
-            const c = document.getElementById('tabs-container'); c.innerHTML = '';
-            tripData.forEach((d, i) => {
-                const active = i === currentDayIndex;
-                const style = active ? 'bg-white text-blue-900 shadow-md scale-105' : 'bg-blue-700 text-blue-200 hover:bg-blue-600';
-                c.insertAdjacentHTML('beforeend', `
-                    <div class="flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-bold cursor-pointer transition flex items-center gap-2 ${style}" onclick="switchDay(${i})">
-                        <span>D${i+1}</span>
-                        ${tripData.length > 1 ? `<i class="fas fa-times-circle opacity-50 hover:text-red-500" onclick="deleteDay(event, ${i})"></i>` : ''}
-                    </div>
-                `);
-            });
+        window.saveConfig = function() {
+            window.records.config = {
+                ghToken: document.getElementById('gh-token').value,
+                ghRepo: document.getElementById('gh-repo').value,
+                ghPath: document.getElementById('gh-path').value
+            };
+            window.saveLocal();
+            window.showModal({ title: "完成", desc: "您的雲端同步設定已儲存！", onConfirm: () => {} });
+            window.toggleCloudSettings();
         }
 
-        function switchDay(i) { currentDayIndex = i; renderAll(); }
-        function scrollTabs(dir) { document.getElementById('tabs-container').scrollBy({ left: dir === 'left' ? -120 : 120, behavior: 'smooth' }); }
-        function addDay() { tripData.push({ id: generateId(), dayNameIdentifier: `第 ${tripData.length+1} 天`, spots: [] }); currentDayIndex = tripData.length-1; saveCurrentTripState(); renderAll(); }
+        window.syncData = async function() {
+            const { ghToken, ghRepo, ghPath } = window.records.config;
+            if (!ghToken || !ghRepo) {
+                window.showModal({ title: "需要設定", desc: "請先在側邊欄設定中輸入您的 GitHub Token 與 專案名稱！", onConfirm: () => window.toggleCloudSettings() });
+                return;
+            }
 
-        function deleteDay(e, idx) {
-            e.stopPropagation();
-            showModal('刪除確認', `確定刪除第 ${idx+1} 天？`, true, () => {
-                tripData.splice(idx, 1);
-                if (currentDayIndex >= tripData.length) currentDayIndex = tripData.length - 1;
-                saveCurrentTripState(); renderAll();
-            });
-        }
-        
-        function renderItinerary() {
-            const list = document.getElementById('itinerary-list'); list.innerHTML = '';
-            const spots = tripData[currentDayIndex].spots;
-            if (spots.length === 0) { list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-300 py-12"><p class="text-xs font-bold">尚無景點，請點擊新增</p></div>`; return; }
-            spots.forEach((s, idx) => list.insertAdjacentHTML('beforeend', `
-                <div class="drag-item p-3 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between mb-2 cursor-move hover:border-blue-200 transition" draggable="true" data-index="${idx}">
-                    <div class="flex items-center gap-3 pointer-events-none overflow-hidden flex-1">
-                        <span class="text-[10px] text-slate-300 font-bold">${idx+1}</span>
-                        <div class="truncate"><b class="text-slate-700 block text-xs truncate">${s.name}</b><span class="text-[10px] text-slate-400 truncate">${s.desc}</span></div>
-                    </div>
-                    <button onclick="deleteSpot(${idx})" class="text-slate-300 hover:text-red-500 p-2 ml-2 flex-shrink-0"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                </div>
-            `));
-            bindDragEvents(); 
-        }
+            try {
+                const url = `https://api.github.com/repos/${ghRepo}/contents/${ghPath}`;
+                const getRes = await fetch(url, {
+                    headers: { 'Authorization': `token ${ghToken}` }
+                });
 
-        // --- 拖曳對接 ---
-        function bindDragEvents() {
-            const items = document.querySelectorAll('.drag-item');
-            items.forEach(item => {
-                item.addEventListener('dragstart', function() { draggedElement = this; this.classList.add('dragging'); });
-                item.addEventListener('dragend', function() { this.classList.remove('dragging'); document.querySelectorAll('.drag-item').forEach(el=>el.classList.remove('drag-over')); syncArrayOrder(); });
-                item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
-                item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-                item.addEventListener('drop', function(e) { e.preventDefault(); if (this !== draggedElement) { const all = [...document.querySelectorAll('.drag-item')]; if (all.indexOf(draggedElement) < all.indexOf(this)) this.after(draggedElement); else this.before(draggedElement); } });
-            });
-        }
+                let sha = null;
+                if (getRes.ok) {
+                    const data = await getRes.json();
+                    sha = data.sha;
+                    
+                    window.showModal({
+                        title: "備份偵測",
+                        desc: "偵測到雲端已有行程，要下載並「覆蓋目前行程」嗎？",
+                        onConfirm: (confirm) => {
+                            if (confirm) {
+                                try {
+                                    const content = decodeURIComponent(escape(atob(data.content)));
+                                    window.records = JSON.parse(content);
+                                    window.render();
+                                    alert("雲端數據加載完成！");
+                                } catch (e) {
+                                    alert("數據解碼失敗");
+                                }
+                            } else {
+                                window.uploadData(url, sha);
+                            }
+                        }
+                    });
+                } else {
+                    window.uploadData(url, null);
+                }
 
-        function syncArrayOrder() {
-            const doms = document.querySelectorAll('.drag-item');
-            const newArr = [];
-            doms.forEach(d => newArr.push(tripData[currentDayIndex].spots[parseInt(d.dataset.index, 10)]));
-            tripData[currentDayIndex].spots = newArr;
-            saveCurrentTripState(); renderItinerary();
+            } catch (err) {
+                console.error(err);
+                alert("同步失敗，請檢查網路或密鑰權限。");
+            }
         }
 
-        function addCustomSpot() { 
-            const n = document.getElementById('new-spot-name').value.trim();
-            if (!n) return; tripData[currentDayIndex].spots.push({ id: generateId(), name: n, desc: '手動新增' }); 
-            saveCurrentTripState(); renderItinerary(); document.getElementById('new-spot-name').value = ''; 
-        }
-        function deleteSpot(i) { tripData[currentDayIndex].spots.splice(i, 1); saveCurrentTripState(); renderItinerary(); }
-        
-        // --- 匯入/匯出：100% 精準對接 ---
-        function triggerImport() { document.getElementById('import-file').click(); }
-        
-        async function handleImport(e) {
-            const file = e.target.files[0]; if (!file) return;
-            const ext = file.name.split('.').pop().toLowerCase();
+        window.uploadData = async function(url, sha) {
+            const { ghToken } = window.records.config;
+            const contentText = JSON.stringify(window.records, null, 2);
+            const base64 = btoa(unescape(encodeURIComponent(contentText)));
             
-            if (file.type.startsWith('image/')) {
-                const r = new FileReader(); 
-                r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], file.type, true); 
-                r.readAsDataURL(file);
-                
-            } else if (ext === 'pdf') {
-                const r = new FileReader(); 
-                r.onload = ev => callGeminiAI(ev.target.result.split(',')[1], 'application/pdf', true); 
-                r.readAsDataURL(file);
-                
-            } else if (ext === 'doc' || ext === 'txt' || ext === 'json' || ext === 'csv') {
-                const r = new FileReader(); 
-                r.onload = ev => callGeminiAI(ev.target.result, 'text/plain', false); 
-                r.readAsText(file);
-                
-            } else if (ext === 'docx') {
-                const r = new FileReader(); 
-                r.onload = async (ev) => {
-                    try {
-                        const res = await mammoth.extractRawText({arrayBuffer: ev.target.result});
-                        if(res.value) callGeminiAI(res.value, 'text/plain', false);
-                    } catch (err) {
-                        showModal('錯誤', 'DOCX 解析失敗。', false);
-                    }
-                };
-                r.readAsArrayBuffer(file);
-                
-            } else {
-                const r = new FileReader(); 
-                r.onload = ev => {
-                    try {
-                        const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
-                        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                        const fmt = [];
-                        rows.forEach(r => {
-                            const spot = r['景點名稱'] || r['景點'] || r['Spot'];
-                            if(!spot) return;
-                            const dN = (r['天數'] || r['Day'] || '1').toString();
-                            let d = fmt.find(x => x.dayNameIdentifier.includes(dN));
-                            if(!d) { d = { dayNameIdentifier: `第 ${dN} 天`, spots: [] }; fmt.push(d); }
-                            d.spots.push({ name: spot, desc: r['備註說明'] || r['備註'] || '' });
-                        });
-                        mergeIncomingData(fmt);
-                    } catch(err) { 
-                        showModal('錯誤', 'Excel 解析失敗。', false); 
-                    }
-                };
-                r.readAsArrayBuffer(file);
-            }
-            e.target.value = '';
+            const putRes = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${ghToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: "Sync travel data from Trippie Web App",
+                    content: base64,
+                    sha: sha
+                })
+            });
+
+            if (putRes.ok) alert("進度已成功同步至 GitHub！");
+            else alert("上傳失敗，請稍後再試。");
         }
-
-        function openExportModal() { document.getElementById('export-modal').classList.remove('hidden'); }
-        function closeExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
-
-        function executeExport() {
-            const fmt = document.querySelector('input[name="export-format"]:checked').value;
-            const title = document.getElementById('trip-title-input').value.trim() || "旅遊行程";
-            closeExportModal();
-            if (tripData.every(d => d.spots.length === 0)) return showModal('提示', '行程目前為空。', false);
-
-            if (fmt === 'excel') {
-                const rows = [];
-                tripData.forEach(d => { d.spots.forEach((s, i) => rows.push({ '天數': d.dayNameIdentifier, '序': i+1, '景點名稱': s.name, '備註說明': s.desc })); rows.push({}); });
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(rows);
-                XLSX.utils.book_append_sheet(wb, ws, "行程表");
-                XLSX.writeFile(wb, `${title}.xlsx`);
-            } else if (fmt === 'pdf') {
-                const el = document.createElement('div'); el.style.padding='40px'; el.style.background='#fff';
-                tripData.forEach((d, i) => { if(!d.spots.length) return; el.innerHTML += `<h2 style="background:#f1f5f9;padding:12px;border-left:6px solid #1e3a8a;margin-top:40px;">${d.dayNameIdentifier}</h2>`; d.spots.forEach((s, idx) => el.innerHTML += `<p style="margin:15px 0; border-bottom:1px solid #eee; padding-bottom:5px;"><b>${idx+1}. ${s.name}</b><br><small style="color:#64748b">${s.desc}</small></p>`); });
-                html2pdf().from(el).set({ filename: `${title}.pdf`, jsPDF: { format: 'a4' } }).save();
-            } else {
-                let docText = title + "\n\n"; 
-                tripData.forEach(d => { docText += "【" + d.dayNameIdentifier + "】\n"; d.spots.forEach((s, i) => docText += (i+1) + ". " + s.name + " (" + s.desc + ")\n"); docText += "\n"; });
-                const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\ufeff', docText], { type: 'application/msword' })); link.download = `${title}.doc`; link.click();
-            }
-        }
-
-        // --- 提示系統 ---
-        function showModal(title, message, isConfirm, onConfirm) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-message').innerHTML = message;
-            const acts = document.getElementById('modal-actions'); acts.innerHTML = '';
-            if (isConfirm) {
-                acts.innerHTML = `<button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg">取消</button><button id="cfm-btn" class="px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-lg shadow-md transition active:scale-90">確定</button>`;
-                document.getElementById('cfm-btn').onclick = () => { onConfirm(); closeModal(); };
-            } else { acts.innerHTML = `<button onclick="closeModal()" class="w-full py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-md">確定</button>`; }
-            document.getElementById('custom-modal').classList.remove('hidden');
-        }
-        function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); }
-        function showLoading() { document.getElementById('ai-loading-modal').classList.remove('hidden'); }
-        function hideLoading() { document.getElementById('ai-loading-modal').classList.add('hidden'); }
-
-        window.onload = function() {
-            // 註冊 Service Worker，啟動 PWA 安裝與離線機制
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA 引擎啟動成功！範圍:', reg.scope))
-                    .catch(err => console.log('PWA 引擎啟動失敗:', err));
-            }
-            // 載入行程資料
-            loadAllTrips();
-        };
     </script>
 </body>
 </html>
