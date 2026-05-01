@@ -21,7 +21,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .sidebar { scrollbar-width: thin; scrollbar-color: #e5e7eb transparent; }
-        .spot-card:hover .delete-btn { opacity: 1; }
         #map { z-index: 1; height: 100%; width: 100%; background: #f8fafc; }
         #map-section { position: relative; transition: all 0.3s ease; }
         
@@ -49,60 +48,21 @@
     <nav class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 shadow-sm z-50">
         <div class="flex items-center gap-2">
             <i class="ph-fill ph-map-trifold text-blue-600 text-3xl"></i>
-            <h1 id="app-title" contenteditable="true" class="text-xl font-bold tracking-tight outline-none focus:text-blue-600">我的旅程</h1>
+            <h1 id="app-title" contenteditable="true" class="text-xl font-bold outline-none focus:text-blue-600">我的旅程</h1>
         </div>
         <div class="flex items-center gap-2">
             <button onclick="toggleMap()" class="p-2 hover:bg-slate-100 rounded-xl transition text-slate-600 flex items-center gap-2 border border-slate-200">
                 <i class="ph ph-map-trifold text-xl"></i>
                 <span class="hidden md:inline font-bold text-sm">地圖開關</span>
             </button>
-            
             <button onclick="triggerImport()" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-100 transition border border-blue-200">
                 <i class="ph ph-magic-wand"></i>
                 <span class="hidden sm:inline">AI 萬能匯入</span>
             </button>
             <input type="file" id="universal-import" class="hidden" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*">
-            
-            <div class="relative group">
-                <button class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg">
-                    <i class="ph ph-export"></i>
-                    <span class="hidden sm:inline">匯出行程</span>
-                    <i class="ph ph-caret-down"></i>
-                </button>
-                <div class="absolute right-0 top-full mt-2 w-48 bg-white shadow-2xl rounded-2xl border border-slate-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] transform origin-top-right group-hover:translate-y-1">
-                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center gap-3 transition">
-                        <i class="ph ph-file-xls text-green-500 text-xl"></i>
-                        <div class="font-bold text-sm">匯出 Excel</div>
-                    </button>
-                    <button onclick="exportToWord()" class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 transition border-t border-slate-50">
-                        <i class="ph ph-file-doc text-blue-500 text-xl"></i>
-                        <div class="font-bold text-sm">匯出 Word</div>
-                    </button>
-                </div>
-            </div>
-
-            <button onclick="toggleCloudSettings()" class="p-2 hover:bg-slate-100 rounded-full transition ml-2">
-                <i class="ph ph-cloud-arrow-up text-xl text-slate-400"></i>
-            </button>
-            <button onclick="syncData()" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition">
-                <i class="ph ph-arrows-clockwise text-xl"></i>
-            </button>
+            <button onclick="syncData()" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition ml-2"><i class="ph ph-arrows-clockwise text-xl"></i></button>
         </div>
     </nav>
-
-    <!-- 雲端設定區 -->
-    <div id="cloud-sidebar" class="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-[60] transform translate-x-full transition-transform duration-300 p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-lg font-bold">GitHub 雲端同步設定</h2>
-            <button onclick="toggleCloudSettings()"><i class="ph ph-x text-2xl"></i></button>
-        </div>
-        <div class="space-y-4">
-            <input id="gh-token" type="password" class="w-full border p-2 rounded-lg" placeholder="GitHub Token (ghp_xxxx)">
-            <input id="gh-repo" type="text" class="w-full border p-2 rounded-lg" placeholder="帳號/專案名 (user/repo)">
-            <input id="gh-path" type="text" class="w-full border p-2 rounded-lg" value="travel-data.json">
-            <button onclick="saveConfig()" class="w-full bg-slate-800 text-white py-2 rounded-lg hover:bg-slate-900 transition">儲存設定</button>
-        </div>
-    </div>
 
     <!-- 主顯示區 -->
     <main class="flex-grow flex overflow-hidden">
@@ -124,7 +84,7 @@
                 </div>
             </div>
             <div id="itinerary-list" class="flex-grow overflow-y-auto p-6 sidebar space-y-8"></div>
-            <div class="p-4 border-t border-slate-100 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div class="p-4 border-t border-slate-100 bg-white shrink-0">
                 <button onclick="addSpot()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
                     <i class="ph ph-plus-bold"></i>
                     <span>新增景點行程</span>
@@ -138,9 +98,6 @@
         <div class="bg-white rounded-2xl p-6 w-80 shadow-2xl transform scale-90 transition-transform duration-200" id="modal-content">
             <h3 id="modal-title" class="text-lg font-bold mb-2">確認視窗</h3>
             <p id="modal-desc" class="text-slate-500 mb-6 text-sm"></p>
-            <div id="modal-input-area" class="hidden mb-4">
-                <input id="modal-input" type="text" class="w-full border p-2 rounded-lg outline-none focus:border-blue-500" placeholder="請輸入內容...">
-            </div>
             <div class="flex gap-2 justify-end">
                 <button id="modal-cancel" class="px-4 py-2 text-slate-400 font-bold">取消</button>
                 <button id="modal-confirm" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">確定</button>
@@ -153,35 +110,19 @@
 
     <script>
         const GEN_AI_KEY = ""; 
-        window.records = {
-            title: "我的旅程",
-            activeDay: 0,
-            days: [ { spots: [] } ],
-            config: { ghToken: "", ghRepo: "", ghPath: "travel-data.json" }
-        };
-
+        window.records = { title: "我的旅程", activeDay: 0, days: [ { spots: [] } ] };
         let map, markersLayer, polyline;
 
-        window.onload = () => {
-            initMap();
-            window.loadLocal();
-            window.render();
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js').catch(console.error);
-            }
-        };
-
-        document.getElementById('universal-import').addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                window.handleUniversalImport(e.target.files[0]);
-                e.target.value = '';
-            }
-        });
+        window.onload = () => { initMap(); window.loadLocal(); window.render(); };
 
         window.triggerImport = () => document.getElementById('universal-import').click();
 
+        document.getElementById('universal-import').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) { window.handleUniversalImport(e.target.files[0]); e.target.value = ''; }
+        });
+
         /**
-         * 智慧匯入核心 (防禦性編碼 + 多天數自動分組)
+         * 智慧匯入核心 (終極穩定修復版：指數退避重試 + 嚴格 JSON 安全校驗)
          */
         window.handleUniversalImport = async function(file) {
             if (!file) return;
@@ -189,17 +130,15 @@
             const overlay = document.createElement('div');
             overlay.className = "fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-6";
             overlay.innerHTML = `
-                <div class="bg-white rounded-[40px] px-10 py-12 flex flex-col items-center gap-8 text-center shadow-2xl">
+                <div class="bg-white rounded-[40px] px-10 py-12 flex flex-col items-center gap-8 text-center shadow-2xl max-w-sm">
                     <div class="w-24 h-24 rounded-full border-4 border-blue-50 border-t-blue-600 animate-spin flex items-center justify-center">
                         <i class="ph-bold ph-sparkle text-4xl text-blue-600"></i>
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-900 mb-2">AI 行程空間解析中</div>
-                        <div id="ai-status" class="text-slate-500 font-medium small">正在讀取「${file.name}」...</div>
+                        <div class="text-2xl font-black text-slate-900 mb-2">AI 行程解析中</div>
+                        <div id="ai-status" class="text-slate-500 font-medium">正在掃描資料...</div>
                     </div>
-                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div id="ai-progress" class="bg-blue-600 h-full w-0 transition-all duration-700"></div>
-                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="ai-progress" class="bg-blue-600 h-full w-0 transition-all duration-700"></div></div>
                 </div>
             `;
             document.body.appendChild(overlay);
@@ -208,107 +147,86 @@
             const progress = document.getElementById('ai-progress');
 
             try {
-                progress.style.width = '15%';
                 let apiKey = localStorage.getItem('chicTrip_api_key') || GEN_AI_KEY;
-                if (!apiKey || apiKey === "[[GEMINI_API_KEY]]" || apiKey.trim() === "") {
+                if (!apiKey || apiKey.includes('GEMINI')) {
                     apiKey = prompt('請輸入您的 Gemini API Key：');
-                    if (!apiKey) { overlay.remove(); return; }
+                    if (!apiKey) throw new Error("未提供金鑰");
                     localStorage.setItem('chicTrip_api_key', apiKey.trim());
                 }
 
                 const ext = file.name.split('.').pop().toLowerCase();
-                let parsedData = [];
+                let textData = "", inlineData = null, parsedData = [];
 
                 if (ext === 'xlsx' || ext === 'xls') {
-                    status.innerText = "正在解析 Excel 結構與天數...";
-                    const data = await file.arrayBuffer();
-                    const wb = window.XLSX.read(data);
-                    const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                    const dayMap = {};
-                    rows.forEach(r => {
-                        const spotName = r['景點名稱'] || r['景點'] || r['Spot'];
-                        if(!spotName) return;
-                        const dN = parseInt((r['天數']||'1').toString().match(/\d+/)?.[0] || '1');
-                        if (!dayMap[dN]) dayMap[dN] = { day: dN, spots: [] };
-                        dayMap[dN].spots.push({ 
-                            name: spotName, 
-                            time: r['預計時間']||"10:00", 
-                            duration: r['停留(分)']||"60", 
-                            lat: r['緯度'] || null, 
-                            lng: r['經度'] || null 
-                        });
-                    });
-                    parsedData = Object.values(dayMap).sort((a,b) => a.day - b.day);
-                    progress.style.width = '50%';
-                } else {
-                    let inlineData = null, textData = null;
-                    if (file.type.startsWith('image/') || ext === 'pdf') {
-                        const base64 = await toBase64(file);
-                        inlineData = { mimeType: file.type || 'application/pdf', data: base64.split(',')[1] };
-                    } else if (ext === 'docx') {
-                        const res = await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
-                        textData = res.value;
-                    } else { textData = await file.text(); }
+                    const workbook = XLSX.read(await file.arrayBuffer());
+                    textData = JSON.stringify(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]));
+                } else if (file.type.startsWith('image/') || ext === 'pdf') {
+                    const base64 = await toBase64(file);
+                    inlineData = { mimeType: file.type || 'application/pdf', data: base64.split(',')[1] };
+                } else if (ext === 'docx') {
+                    const res = await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
+                    textData = res.value;
+                } else { textData = await file.text(); }
 
-                    progress.style.width = '40%';
-                    status.innerText = "Gemini AI 正在解析空間定位與分組...";
+                status.innerText = "正在傳送 AI 雲端解析...";
+                progress.style.width = '30%';
 
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-                    const payload = { 
-                        contents: [{ parts: [
-                            { text: `你是專業旅遊行程解析引擎。請將內容格式化為 JSON。規則：1. 必須按天數分組(day欄位)。2. 務必利用你的知識庫為每個點提供lat與lng座標。3. 僅輸出 JSON 陣列。格式：[{"day":1, "spots":[{"name":"..","time":"..","lat":0.0,"lng":0.0}]}]` },
-                            inlineData ? { inlineData: inlineData } : { text: textData }
-                        ]}],
-                        generationConfig: { responseMimeType: "application/json" }
-                    };
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const payload = { 
+                    contents: [{ parts: [
+                        { text: `你是一位極致專業的旅遊行程分析師。請分析所提供的檔案內容，將行程轉換為 JSON。
+                        規則：1. 必須按天數分組(day欄位，例如1, 2, 3)。2. 即使內容非常多，也請完整列出所有景點。3. 務必利用你的知識庫為每個點提供大約的lat與lng座標。4. 禁止任何解釋。
+                        格式範例：[{"day":1, "spots":[{"name":"景點1","time":"10:00","lat":35.6,"lng":139.7}]}]` },
+                        inlineData ? { inlineData: inlineData } : { text: textData.substring(0, 30000) } // 防止文本過大
+                    ]}],
+                    generationConfig: { responseMimeType: "application/json" }
+                };
 
-                    for (let retry = 0; retry < 3; retry++) {
-                        try {
-                            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            const d = await res.json();
-                            
-                            // --- 修復 'reading 0' 之防禦邏輯 ---
-                            if (!d.candidates || d.candidates.length === 0) {
-                                throw new Error("AI 拒絕產出內容 (可能觸發安全過濾或模型過載)。");
-                            }
-                            
-                            parsedData = JSON.parse(d.candidates[0].content.parts[0].text);
-                            break;
-                        } catch (e) { 
-                            if (retry === 2) throw e; 
-                            await new Promise(ok => setTimeout(ok, 2000)); 
-                        }
+                // --- 指數退避重試邏輯 ---
+                let response, retryDelays = [1000, 3000, 6000]; 
+                for (let r = 0; r <= retryDelays.length; r++) {
+                    response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (response.status === 429 && r < retryDelays.length) {
+                        status.innerText = `伺服器忙碌，等待重試 (${r+1}/${retryDelays.length})...`;
+                        await new Promise(ok => setTimeout(ok, retryDelays[r]));
+                        continue;
                     }
+                    break;
                 }
 
-                progress.style.width = '75%';
-                status.innerText = "正在自動配置分頁與圖片...";
+                if (!response.ok) {
+                    const err = await response.json().catch(()=>({}));
+                    throw new Error(err.error?.message || `HTTP ${response.status}`);
+                }
+
+                const d = await response.json();
+                // --- 嚴格校驗：解決 'reading 0' 崩潰 ---
+                if (!d.candidates || d.candidates.length === 0 || !d.candidates[0].content) {
+                    throw new Error("AI 無法識別內容（可能觸發安全過濾或文檔過於複雜）。");
+                }
+
+                parsedData = JSON.parse(d.candidates[0].content.parts[0].text);
+                if (!Array.isArray(parsedData)) parsedData = [parsedData];
+
+                progress.style.width = '70%';
+                status.innerText = "正在同步地圖標記與自動擴展分頁...";
 
                 let totalCount = 0;
-                const baseDayIdx = window.records.activeDay;
+                const baseIdx = window.records.activeDay;
 
                 for (let i = 0; i < parsedData.length; i++) {
-                    const targetIdx = baseDayIdx + i;
-                    // 自動增加天數分頁
+                    const targetIdx = baseIdx + i;
                     while (window.records.days.length <= targetIdx) window.records.days.push({ spots: [] });
-
+                    
                     const spots = Array.isArray(parsedData[i].spots) ? parsedData[i].spots : (Array.isArray(parsedData[i]) ? parsedData[i] : []);
                     const processed = await Promise.all(spots.map(async (s) => {
                         let lat = parseFloat(s.lat), lng = parseFloat(s.lng);
-                        if (isNaN(lat) || !lat) {
+                        if (!lat || isNaN(lat)) {
                             const info = await window.fetchPlaceInfo(s.name);
                             lat = info.lat; lng = info.lng;
                         }
                         totalCount++;
-                        return { 
-                            id: Date.now() + Math.random(), 
-                            name: s.name || "未命名景點", 
-                            time: s.time || "10:00", 
-                            duration: s.duration || "60", 
-                            img: `https://loremflickr.com/400/300/${encodeURIComponent((s.name||"").split(' ')[0])},landmark?lock=${Math.floor(Math.random()*1000)}`, 
-                            lat, lng 
-                        };
+                        return { id: Date.now()+Math.random(), name: s.name, time: s.time||"10:00", duration: "60", img: `https://loremflickr.com/400/300/${encodeURIComponent(s.name.split(' ')[0])},landmark?lock=${Math.floor(Math.random()*1000)}`, lat, lng };
                     }));
                     window.records.days[targetIdx].spots.push(...processed);
                 }
@@ -317,25 +235,16 @@
                 setTimeout(() => {
                     overlay.remove();
                     window.render();
-                    window.showModal({ 
-                        title: "匯入成功", 
-                        desc: `已成功載入 ${parsedData.length} 天的行程，共 ${totalCount} 個景點。<br>地圖已針對重疊景點進行自動展開補償。`, 
-                        onConfirm: ()=>{} 
-                    });
+                    window.showModal({ title: "匯入成功", desc: `已自動生成並分配 ${parsedData.length} 天的行程。<br>共偵測到 ${totalCount} 個景點。`, onConfirm: ()=>{} });
                 }, 400);
 
             } catch (err) {
                 overlay.remove();
-                console.error(err);
-                window.showModal({ 
-                    title: "解析中斷", 
-                    desc: `錯誤詳情：${err.message}<br><br>請確認金鑰是否正確，或嘗試換一個檔案格式。`, 
-                    onConfirm: ()=>{} 
-                });
+                window.showModal({ title: "匯入中斷", desc: `發生錯誤：${err.message}<br><br>建議：請確認金鑰正確，或稍等一分鐘讓 AI 流量恢復再試。`, onConfirm: ()=>{} });
             }
         };
 
-        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
+        function toBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = e => reject(e); }); }
 
         window.initMap = function() {
             if (map) return;
@@ -351,7 +260,7 @@
             tabs.innerHTML = '';
             r.days.forEach((_, i) => {
                 const btn = document.createElement('button');
-                btn.className = `px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${r.activeDay === i ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-600 border border-slate-200'}`;
+                btn.className = `px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all ${r.activeDay === i ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-600 border'}`;
                 btn.innerText = `第 ${i+1} 天`;
                 btn.onclick = () => { r.activeDay = i; window.render(); };
                 tabs.appendChild(btn);
@@ -362,9 +271,7 @@
             const dragContainer = document.getElementById('drag-container');
             const currentSpots = r.days[r.activeDay].spots;
 
-            if (currentSpots.length === 0) {
-                dragContainer.innerHTML = `<div class="text-center py-20 text-slate-400">目前尚無行程景點。</div>`;
-            }
+            if (currentSpots.length === 0) dragContainer.innerHTML = `<div class="text-center py-20 text-slate-400">目前尚無景點。</div>`;
 
             currentSpots.forEach((spot, idx) => {
                 const card = document.createElement('div');
@@ -375,121 +282,89 @@
                         ${idx < currentSpots.length - 1 ? '<div class="w-0.5 h-16 bg-slate-200 mt-2"></div>' : ''}
                     </div>
                     <div class="flex-grow bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm p-4 flex gap-4 hover:shadow-md transition">
-                        <img src="${spot.img}" class="w-20 h-20 rounded-lg object-cover bg-slate-100">
+                        <img src="${spot.img}" class="w-20 h-20 rounded-lg object-cover">
                         <div class="flex-grow">
                             <div class="flex justify-between font-bold text-slate-800">
-                                <input onchange="updateSpotField(${spot.id},'name',this.value)" class="outline-none focus:text-blue-600 w-full" value="${spot.name}">
-                                <button onclick="removeSpot(${spot.id})" class="text-slate-300 hover:text-rose-500 transition"><i class="ph ph-trash text-xl"></i></button>
+                                <input onchange="updateSpotField(${spot.id},'name',this.value)" class="outline-none w-full" value="${spot.name}">
+                                <button onclick="removeSpot(${spot.id})" class="text-slate-300 hover:text-rose-500"><i class="ph ph-trash text-xl"></i></button>
                             </div>
-                            <div class="text-xs text-slate-500 mt-2 flex items-center gap-3">
-                                <span class="bg-slate-100 px-2 py-0.5 rounded">${spot.time}</span>
-                                <span>停留 ${spot.duration} 分鐘</span>
-                            </div>
+                            <div class="text-xs text-slate-500 mt-2">${spot.time} · 停留 ${spot.duration} 分</div>
                         </div>
                     </div>
                 `;
                 dragContainer.appendChild(card);
             });
 
-            if (currentSpots.length > 0) {
-                new Sortable(dragContainer, { animation: 150, onEnd: (evt) => {
-                    const spots = window.records.days[window.records.activeDay].spots;
-                    const [moved] = spots.splice(evt.oldIndex, 1);
-                    spots.splice(evt.newIndex, 0, moved);
-                    window.render();
-                }});
-            }
+            if (currentSpots.length > 0) new Sortable(dragContainer, { animation: 150, onEnd: () => {
+                const spots = Array.from(document.querySelectorAll('.spot-card')).map(el => {
+                    const id = parseFloat(el.innerHTML.match(/updateSpotField\((\d+\.\d+)/)[1]);
+                    return r.days[r.activeDay].spots.find(s=>s.id === id);
+                });
+                r.days[r.activeDay].spots = spots; window.saveLocal(); updateMap();
+            }});
             updateMap();
-            saveLocal();
+            window.saveLocal();
         };
 
         /**
-         * 地圖核心更新 (修復重疊：進階座標抖動補償)
+         * 地圖座標更新 (智慧螺旋位移補償：防止標記消失)
          */
         function updateMap() {
             if (!map || !markersLayer) return;
-            markersLayer.clearLayers();
-            if (polyline) map.removeLayer(polyline);
-
+            markersLayer.clearLayers(); if (polyline) map.removeLayer(polyline);
             const spots = window.records.days[window.records.activeDay].spots;
-            const latlngs = [];
-            const coordsSeen = {}; 
+            const latlngs = [], coordsSeen = {};
 
             spots.forEach((spot, idx) => {
                 if (spot.lat && spot.lng) {
-                    let finalLat = parseFloat(spot.lat);
-                    let finalLng = parseFloat(spot.lng);
-                    const key = `${finalLat.toFixed(6)}_${finalLng.toFixed(6)}`;
-
-                    // --- 智慧階層式抖動：解決標記消失不見的問題 ---
+                    let fLat = parseFloat(spot.lat), fLng = parseFloat(spot.lng);
+                    const key = `${fLat.toFixed(6)}_${fLng.toFixed(6)}`;
                     if (coordsSeen[key]) {
                         const count = coordsSeen[key]++;
-                        // 使用螺旋散佈位移，確保所有點在任何縮放層級都清晰
-                        const offset = 0.00035 * Math.sqrt(count); 
-                        const angle = count * 137.5; // 黃金角度散佈
-                        finalLat += offset * Math.sin(angle * Math.PI / 180);
-                        finalLng += offset * Math.cos(angle * Math.PI / 180);
-                    } else {
-                        coordsSeen[key] = 1;
-                    }
+                        const offset = 0.0004 * Math.sqrt(count);
+                        const angle = count * 137.5;
+                        fLat += offset * Math.sin(angle * Math.PI / 180);
+                        fLng += offset * Math.cos(angle * Math.PI / 180);
+                    } else { coordsSeen[key] = 1; }
 
-                    const icon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div>${idx + 1}</div>`,
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14]
-                    });
-                    
-                    const marker = L.marker([finalLat, finalLng], { icon }).addTo(markersLayer)
-                                   .bindPopup(`<b>${idx + 1}. ${spot.name}</b>`);
-                    
-                    latlngs.push([finalLat, finalLng]);
+                    const icon = L.divIcon({ className: 'custom-marker', html: `<div>${idx + 1}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+                    L.marker([fLat, fLng], { icon }).addTo(markersLayer).bindPopup(`<b>${idx + 1}. ${spot.name}</b>`);
+                    latlngs.push([fLat, fLng]);
                 }
             });
 
             if (latlngs.length > 1) {
                 polyline = L.polyline(latlngs, { color: '#f97316', weight: 3, opacity: 0.5, dashArray: '8, 8' }).addTo(map);
                 map.fitBounds(polyline.getBounds(), { padding: [60, 60] });
-            } else if (latlngs.length === 1) {
-                map.setView(latlngs[0], 15);
-            }
+            } else if (latlngs.length === 1) map.setView(latlngs[0], 15);
         }
 
         window.fetchPlaceInfo = async function(name) {
             const res = { lat: 35.6895 + (Math.random()-0.5)*0.1, lng: 139.6917 + (Math.random()-0.5)*0.1 };
             try {
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1`;
-                const r = await fetch(url, { headers: { 'User-Agent': 'Trippie/2.0' } });
+                const r = await fetch(url, { headers: { 'User-Agent': 'Trippie/3.0' } });
                 const d = await r.json();
                 if (d.length > 0) { res.lat = parseFloat(d[0].lat); res.lng = parseFloat(d[0].lon); }
-            } catch(e) {}
-            return res;
+            } catch(e) {} return res;
         };
 
-        window.showModal = function({ title, desc, showInput = false, onConfirm }) {
-            const container = document.getElementById('modal-container');
-            const titleEl = document.getElementById('modal-title');
-            const descEl = document.getElementById('modal-desc');
-            const inputArea = document.getElementById('modal-input-area');
-            const confirmBtn = document.getElementById('modal-confirm');
-            titleEl.innerText = title;
-            descEl.innerHTML = desc;
-            inputArea.classList.toggle('hidden', !showInput);
-            container.classList.remove('hidden');
-            setTimeout(() => container.classList.remove('opacity-0'), 10);
-            confirmBtn.onclick = () => { if(onConfirm) onConfirm(document.getElementById('modal-input').value); container.classList.add('hidden'); };
-            document.getElementById('modal-cancel').onclick = () => container.classList.add('hidden');
+        window.showModal = function({ title, desc, onConfirm }) {
+            const c = document.getElementById('modal-container');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerHTML = desc;
+            c.classList.remove('hidden'); setTimeout(() => c.classList.remove('opacity-0'), 10);
+            document.getElementById('modal-confirm').onclick = () => { if(onConfirm) onConfirm(); c.classList.add('hidden'); };
+            document.getElementById('modal-cancel').onclick = () => c.classList.add('hidden');
         };
 
         window.addDay = () => { window.records.days.push({ spots: [] }); window.records.activeDay = window.records.days.length - 1; window.render(); };
-        window.removeDay = () => { if(window.records.days.length>1) { window.records.days.splice(window.records.activeDay, 1); window.records.activeDay=0; window.render(); } };
+        window.removeDay = () => { if(window.records.days.length > 1) { window.records.days.splice(window.records.activeDay, 1); window.records.activeDay = 0; window.render(); } };
         window.removeSpot = (id) => { window.records.days[window.records.activeDay].spots = window.records.days[window.records.activeDay].spots.filter(s=>s.id!==id); window.render(); };
         window.updateSpotField = (id, f, v) => { const s = window.records.days[window.records.activeDay].spots.find(x=>x.id===id); if(s) { s[f]=v; if(f==='name') window.render(); } };
         window.saveLocal = () => localStorage.setItem('trippie_records', JSON.stringify(window.records));
         window.loadLocal = () => { const s = localStorage.getItem('trippie_records'); if(s) window.records = JSON.parse(s); };
         window.toggleMap = () => { document.getElementById('map-section').classList.toggle('hidden'); setTimeout(()=>map.invalidateSize(), 300); };
-        window.toggleCloudSettings = () => document.getElementById('cloud-sidebar').classList.toggle('translate-x-full');
-        window.saveConfig = () => { window.records.config.ghToken = document.getElementById('gh-token').value; window.saveLocal(); window.toggleCloudSettings(); };
     </script>
 </body>
 </html>
