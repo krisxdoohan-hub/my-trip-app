@@ -52,7 +52,7 @@
     <nav class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 shadow-sm z-50">
         <div class="flex items-center gap-2">
             <i class="ph-fill ph-map-trifold text-blue-600 text-3xl"></i>
-            <h1 id="app-title" contenteditable="true" class="text-xl font-bold tracking-tight outline-none focus:text-blue-600">我的東京之旅</h1>
+            <h1 id="app-title" contenteditable="true" class="text-xl font-bold tracking-tight outline-none focus:text-blue-600">我的日本之旅</h1>
         </div>
         <div class="flex items-center gap-2">
             <!-- 地圖切換 -->
@@ -66,6 +66,7 @@
                 <i class="ph ph-magic-wand"></i>
                 <span class="hidden sm:inline">AI 萬能匯入</span>
             </button>
+            <!-- 支援原版所有格式 -->
             <input type="file" id="universal-import" class="hidden" accept=".xlsx, .xls, .csv, .txt, .json, .doc, .docx, .pdf, image/*">
             
             <!-- 匯出按鈕 -->
@@ -187,7 +188,7 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- 核心應用程式邏輯 -->
+    <!-- 核心應用程式邏輯 (無 Module，標準 Script) -->
     <script>
         const GEN_AI_KEY = ""; 
         
@@ -195,14 +196,11 @@
          * 全域狀態
          */
         window.records = {
-            title: "我的台北行程",
+            title: "我的日本之旅",
             activeDay: 0,
             days: [
                 {
-                    spots: [
-                        { id: 1, name: "台北 101", time: "18:00", duration: "90", img: "https://images.unsplash.com/photo-1552912019-ad300259943b?w=800", lat: 25.0336, lng: 121.5646 },
-                        { id: 2, name: "中正紀念堂", time: "14:00", duration: "60", img: "https://images.unsplash.com/photo-1549487353-29471329c3ae?w=800", lat: 25.0346, lng: 121.5218 }
-                    ]
+                    spots: []
                 }
             ],
             config: {
@@ -236,7 +234,7 @@
         window.triggerImport = () => document.getElementById('universal-import').click();
 
         /**
-         * 智慧匯入核心邏輯 (融合原版多格式支援與動態金鑰)
+         * 智慧匯入核心邏輯 (加入 AI Geocoding 經緯度推斷)
          */
         window.handleUniversalImport = async function(file) {
             if (!file) return;
@@ -250,7 +248,7 @@
                         <i class="ph-bold ph-sparkle text-4xl text-blue-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-900 mb-2">AI 正在解析您的檔案</div>
+                        <div class="text-2xl font-black text-slate-900 mb-2">AI 正在解析與定位</div>
                         <div id="ai-status" class="text-slate-500 font-medium">正在掃描「${file.name}」中的旅遊資訊...</div>
                     </div>
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -266,7 +264,6 @@
             try {
                 progress.style.width = '15%';
                 
-                // 動態 API Key 邏輯
                 let apiKey = localStorage.getItem('chicTrip_api_key') || GEN_AI_KEY;
                 if (!apiKey || apiKey === "[[GEMINI_API_KEY]]" || apiKey.trim() === "") {
                     apiKey = prompt('請輸入您的 Gemini API Key：\n(系統僅會保存在您的瀏覽器中，不會外洩)');
@@ -293,7 +290,9 @@
                         aiSpots.push({
                             name: spotName,
                             time: r['預計時間'] || r['時間'] || "10:00",
-                            duration: r['停留(分)'] || r['停留時間'] || "60"
+                            duration: r['停留(分)'] || r['停留時間'] || "60",
+                            lat: r['緯度'] || null,
+                            lng: r['經度'] || null
                         });
                     });
                     progress.style.width = '50%';
@@ -317,22 +316,30 @@
                     }
 
                     progress.style.width = '40%';
-                    status.innerText = "Gemini AI 正在深入識別內容...";
+                    status.innerText = "Gemini AI 正在進行空間地理定位...";
 
                     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                     const payload = { 
                         contents: [{
                             parts: [
                                 {
-                                    text: `你是行程解析引擎，只能輸出 JSON，禁止任何說明文字。
+                                    text: `你是行程解析與地理定位引擎，只能輸出 JSON，禁止任何說明文字。
+對於每個解析出的景點，請務必利用你的知識庫提供它在真實世界的大約「經度與緯度」座標。
 格式如下：
 [
-  {"name": "景點名稱", "time": "預計時間(HH:mm,預設10:00)", "duration": "停留分鐘(預設60)"}
+  {
+    "name": "景點名稱", 
+    "time": "預計時間(HH:mm,預設10:00)", 
+    "duration": "停留分鐘(數字,預設60)", 
+    "lat": 35.6895, 
+    "lng": 139.6917
+  }
 ]
 規則：
-1. 僅輸出 JSON
+1. 僅輸出 JSON 陣列格式
 2. 不要 \`\`\` 包裹
-3. 不要解釋`
+3. 務必提供 lat (緯度) 與 lng (經度) 的浮點數字
+4. 不要解釋`
                                 },
                                 inlineData ? { inlineData: inlineData } : { text: textData ? `行程檔案內容：\n${textData}` : "" }
                             ]
@@ -366,18 +373,40 @@
                 if (!Array.isArray(aiSpots)) { aiSpots = [aiSpots]; }
 
                 progress.style.width = '80%';
-                status.innerText = "正在為景點定位座標與匹配封面圖...";
+                status.innerText = "正在生成地圖節點與匹配封面圖...";
 
                 const processedSpots = await Promise.all(aiSpots.map(async (s) => {
-                    const info = await window.fetchPlaceInfo(s.name);
+                    // 1. 優先使用 AI 算出來的精確座標
+                    let lat = parseFloat(s.lat);
+                    let lng = parseFloat(s.lng);
+
+                    // 2. 如果 AI 沒算出來，才退回使用圖資 API 搜尋
+                    if (isNaN(lat) || isNaN(lng)) {
+                        const info = await window.fetchPlaceInfo(s.name);
+                        lat = info.lat;
+                        lng = info.lng;
+                    }
+
+                    // 3. 尋找安全的預設座標 (避免跳回台北)
+                    // 預設抓取目前行程中最後一個景點的位置，若全空則預設在東京市區
+                    const currentDaySpots = window.records.days[window.records.activeDay]?.spots || [];
+                    const lastSpot = currentDaySpots.length > 0 ? currentDaySpots[currentDaySpots.length - 1] : null;
+                    const fallbackLat = lastSpot ? lastSpot.lat : 35.6895; // Tokyo fallback
+                    const fallbackLng = lastSpot ? lastSpot.lng : 139.6917;
+
+                    // 4. 匹配圖片
+                    const sig = Math.floor(Math.random() * 10000);
+                    const cleanName = s.name.split(' ')[0]; // 只用店名首段找圖比較準
+                    const img = `https://loremflickr.com/800/600/${encodeURIComponent(cleanName)},landmark,travel?lock=${sig}`;
+
                     return {
                         id: Date.now() + Math.random(),
                         name: s.name,
                         time: s.time || "10:00",
                         duration: s.duration || "60",
-                        img: info.img || `https://source.unsplash.com/featured/?${encodeURIComponent(s.name)}`,
-                        lat: info.lat || (25.0478 + (Math.random() - 0.5) * 0.05),
-                        lng: info.lng || (121.5170 + (Math.random() - 0.5) * 0.05)
+                        img: img,
+                        lat: lat || (fallbackLat + (Math.random() - 0.5) * 0.02),
+                        lng: lng || (fallbackLng + (Math.random() - 0.5) * 0.02)
                     };
                 }));
 
@@ -389,8 +418,8 @@
                         return;
                     }
                     window.showModal({
-                        title: "解析成功",
-                        desc: `已從檔案中提取出 ${processedSpots.length} 個行程景點！要現在加入目前的天數嗎？`,
+                        title: "解析定位成功",
+                        desc: `已透過 AI 空間定位提取出 ${processedSpots.length} 個行程景點！要現在加入目前的天數嗎？`,
                         onConfirm: () => {
                             window.records.days[window.records.activeDay].spots.push(...processedSpots);
                             window.render();
@@ -414,10 +443,7 @@
             });
         }
 
-        // 天數切換
-        window.records.activeDay = 0;
-
-        function initMap() {
+        window.initMap = function() {
             try {
                 if (map) return;
                 const mapContainer = document.getElementById('map');
@@ -426,6 +452,7 @@
                     return;
                 }
 
+                // 預設為日本東京經緯度
                 map = L.map('map', { 
                     zoomControl: false,
                     attributionControl: false,
@@ -513,7 +540,7 @@
                 dragContainer.innerHTML = `
                     <div class="text-center py-20 text-slate-400">
                         <i class="ph ph-package text-5xl mb-2"></i>
-                        <p>今天還沒有景點，按下方按鈕新增！</p>
+                        <p>今天還沒有景點，按下方按鈕新增或點擊右上角匯入！</p>
                     </div>`;
             }
 
@@ -592,10 +619,9 @@
                 }
 
                 const sig = Math.floor(Math.random() * 10000);
-                result.img = `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80`;
-                if (name && name.length > 0) {
-                    result.img = `https://loremflickr.com/800/600/${encodeURIComponent(name)},landmark,travel?lock=${sig}`;
-                }
+                const cleanName = name.split(' ')[0];
+                result.img = `https://loremflickr.com/800/600/${encodeURIComponent(cleanName)},landmark,travel?lock=${sig}`;
+                
             } catch (e) {
                 console.error("Place lookup failed", e);
             }
@@ -729,23 +755,24 @@
                     toast.innerHTML = `<i class="ph-bold ph-magnifying-glass"></i> 正在精確定位地圖...`;
                     document.body.appendChild(toast);
 
+                    // 手動輸入時也優先利用圖資搜尋，若失敗則依賴前一景點偏移
                     const info = await window.fetchPlaceInfo(name);
                     toast.remove();
 
                     const currentSpots = currentDay.spots;
-                    const lastSpot = currentSpots.slice(-1)[0];
-                    let baseLat = lastSpot ? lastSpot.lat : 35.6895; 
-                    let baseLng = lastSpot ? lastSpot.lng : 139.6917;
+                    const lastSpot = currentSpots.length > 0 ? currentSpots[currentSpots.length - 1] : null;
+                    let fallbackLat = lastSpot ? lastSpot.lat : 35.6895; // 預設東京
+                    let fallbackLng = lastSpot ? lastSpot.lng : 139.6917;
 
-                    const targetLat = info.lat || (baseLat + (Math.random() - 0.5) * 0.05);
-                    const targetLng = info.lng || (baseLng + (Math.random() - 0.5) * 0.05);
+                    const targetLat = info.lat || (fallbackLat + (Math.random() - 0.5) * 0.02);
+                    const targetLng = info.lng || (fallbackLng + (Math.random() - 0.5) * 0.02);
 
                     currentDay.spots.push({
                         id,
                         name: name,
                         time: "10:00",
                         duration: "60",
-                        img: info.img,
+                        img: info.img || `https://loremflickr.com/800/600/${encodeURIComponent(name.split(' ')[0])},landmark,travel`,
                         lat: targetLat,
                         lng: targetLng
                     });
