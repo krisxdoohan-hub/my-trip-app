@@ -236,7 +236,10 @@
                 }
 
                 const genAI = new GoogleGenAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const model = genAI.getGenerativeModel({ 
+                    model: "gemini-1.5-flash",
+                    generationConfig: { responseMimeType: "application/json" }
+                });
 
                 const ext = file.name.split('.').pop().toLowerCase();
                 let aiParts = [];
@@ -262,23 +265,21 @@
                 }
 
                 aiParts.push({ text: `
-                    請將內容解析為完整的旅遊行程，並按天數(Day)分組。
-                    必須輸出純 JSON 格式（不要 Markdown 標記）：
+                    請將內容解析為完整的旅遊行程，並按行程順序分組天數。
+                    必須輸出為 JSON 陣列格式，每個元素代表一天的內容。範例如下：
                     [
                       {
                         "day": 1,
                         "spots": [
-                          {"name": "景點名稱", "time": "HH:mm", "duration": "停留分鐘"}
+                          {"name": "景點名稱", "time": "10:00", "duration": "60"}
                         ]
                       }
                     ]
-                    請確保景點名稱完整，時間格式正確。
                 `});
 
                 progress.style.width = '40%';
-                const result = await model.generateContent(aiParts);
-                let responseText = result.response.text();
-                responseText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const result = await model.generateContent({ contents: [{ role: "user", parts: aiParts }] });
+                const responseText = result.response.text();
                 
                 const itineraryData = JSON.parse(responseText);
 
@@ -294,8 +295,8 @@
                             time: s.time || "10:00",
                             duration: s.duration || "60",
                             img: info.img || `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80`,
-                            lat: info.lat || (35.6895 + (Math.random() - 0.5) * 0.05),
-                            lng: info.lng || (139.6917 + (Math.random() - 0.5) * 0.05)
+                            lat: info.lat || (25.0478 + (Math.random() - 0.5) * 0.05),
+                            lng: info.lng || (121.5170 + (Math.random() - 0.5) * 0.05)
                         };
                     }));
                     return { spots: processedSpots };
@@ -306,9 +307,9 @@
                     overlay.remove();
                     window.showModal({
                         title: "AI 規劃完成",
-                        desc: `已成功識別出 ${newDays.length} 天的行程。要「替換」現有行程嗎？(點取消則為附加在最後)`,
-                        onConfirm: (replace) => {
-                            if (replace) {
+                        desc: `已成功識別出 ${newDays.length} 天的行程。要「替換」現有行程嗎？(點取消則將加在最後)`,
+                        onConfirm: (confirm) => {
+                            if (confirm) {
                                 window.records.days = newDays;
                                 window.records.activeDay = 0;
                             } else {
@@ -322,7 +323,7 @@
             } catch (err) {
                 console.error(err);
                 if (overlay) overlay.remove();
-                alert("AI 解析失敗，請檢查金鑰或檔案格式。");
+                alert(`AI 解析失敗：${err.message}\n請檢查 API 金鑰是否正確，或檔案內容是否過於複雜。`);
             }
         };
 
