@@ -1,6 +1,6 @@
 {
-    "name": "放飛自我",
-    "short_name": "放飛自我",
+    "name": "Trippie - 旅遊行程規劃器",
+    "short_name": "Trippie",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#1e3a8a",
