@@ -74,6 +74,9 @@
             </div>
             
             <div class="flex items-center space-x-4">
+                <button @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
+                    <i class="fa-solid fa-cloud text-lg"></i>
+                </button>
                 <button @click="showImportModal = true" class="cursor-pointer text-morandi-dark hover:text-morandi-deep transition" title="智慧匯入行程">
                     <i class="fa-solid fa-file-import text-lg"></i>
                 </button>
@@ -396,6 +399,64 @@
         </div>
     </div>
 
+    <div v-if="showSyncModal" class="absolute inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-xl max-h-[90%] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <h3 class="font-bold text-text-main text-base"><i class="fa-solid fa-cloud mr-2 text-morandi-dark"></i>資料同步與轉移</h3>
+                <button @click="showSyncModal = false" class="text-gray-400 text-lg hover:text-text-main"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">跨裝置本機轉移</h4>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button @click="copySyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-regular fa-copy mr-1"></i>複製代碼</button>
+                    <button @click="pasteSyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-paste mr-1"></i>貼上代碼</button>
+                    <button @click="downloadJSON" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-download mr-1"></i>下載檔案</button>
+                    <label class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 text-center cursor-pointer transition">
+                        <i class="fa-solid fa-upload mr-1"></i>上傳檔案
+                        <input type="file" accept=".json" class="hidden" @change="uploadJSON">
+                    </label>
+                </div>
+            </div>
+
+            <div class="space-y-3 mt-4">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">一鍵建立新行程</h4>
+                <div class="flex flex-col space-y-2 mb-2">
+                    <label class="flex items-center space-x-2 cursor-pointer text-text-main text-xs bg-gray-50 p-2 rounded-xl border border-gray-100">
+                        <input type="checkbox" v-model="keepTemplates" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
+                        <span>保留當前待辦與購物清單 (智慧樣板)</span>
+                    </label>
+                    <button @click="createNewTrip" class="w-full bg-red-50 text-red-500 border border-red-200 p-2.5 rounded-xl hover:bg-red-100 transition text-xs font-bold shadow-sm">
+                        <i class="fa-solid fa-broom mr-1"></i>清空並建立全新行程
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3 mt-4">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">Google 雲端多行程同步</h4>
+                <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
+                <input type="text" v-model="gasUrl" placeholder="請輸入您的 GAS 網頁應用程式網址" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-xs">
+                
+                <div class="flex space-x-2 text-xs">
+                    <button @click="saveToCloud" :disabled="isSyncing" class="flex-1 bg-morandi text-white p-2.5 rounded-xl hover:bg-morandi-dark disabled:opacity-50 transition"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>備份至雲端</button>
+                    <button @click="fetchCloudList" :disabled="isSyncing" class="flex-1 bg-white border border-morandi text-morandi-dark p-2.5 rounded-xl hover:bg-morandi-light disabled:opacity-50 transition"><i class="fa-solid fa-sync mr-1"></i>讀取雲端目錄</button>
+                </div>
+
+                <div v-if="cloudTrips.length > 0" class="flex space-x-2 text-xs mt-3 bg-gray-50 p-2 rounded-xl border border-gray-100 animate-slide-up">
+                    <select v-model="selectedCloudTrip" class="flex-1 border border-gray-200 p-2 rounded-lg bg-white">
+                        <option disabled value="">請選擇要下載的雲端行程</option>
+                        <option v-for="trip in cloudTrips" :key="trip" :value="trip">{{ trip }}</option>
+                    </select>
+                    <button @click="loadSelectedCloudTrip" :disabled="!selectedCloudTrip || isSyncing" class="bg-morandi-dark text-white px-3 rounded-lg hover:bg-morandi-deep disabled:opacity-50 transition shadow-sm">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                </div>
+
+                <p v-if="syncMessage" class="text-[11px] text-center mt-2 font-bold" :class="syncSuccess ? 'text-teal-600' : 'text-red-500'">{{ syncMessage }}</p>
+            </div>
+        </div>
+    </div>
+
     <div v-if="showImportModal" class="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-3xl rounded-2xl p-6 shadow-xl relative flex flex-col h-auto">
             <div class="flex justify-between items-center mb-2">
@@ -420,7 +481,7 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
-            appVersion: '0.0.0.1',
+            appVersion: '0.0.0.2',
             tripTitle: '我的全新旅程',
             isEditingTitle: false,
             currentTab: 'todo', // 預設空資料時顯示 TODO
@@ -445,6 +506,16 @@ createApp({
 
             showImportModal: false,
             importText: '',
+
+            showSyncModal: false,
+            gasUrl: '',
+            isSyncing: false,
+            syncMessage: '',
+            syncSuccess: true,
+            
+            keepTemplates: true,
+            cloudTrips: [],
+            selectedCloudTrip: '',
 
             infoStation: {
                 '資訊整理': [],
@@ -514,7 +585,18 @@ createApp({
             if (newVal === 'list' && this.currentTab.startsWith('day-')) {
                 this.initSortable();
             }
-        }
+        },
+        // ▼ 以下為新增的全天候自動存檔監聽 ▼
+        tripTitle() { this.saveToLocal(); },
+        days: { deep: true, handler() { this.saveToLocal(); } },
+        itineraries: { deep: true, handler() { this.saveToLocal(); } },
+        todos: { deep: true, handler() { this.saveToLocal(); } },
+        shoppingList: { deep: true, handler() { this.saveToLocal(); } },
+        infoStation: { deep: true, handler() { this.saveToLocal(); } }
+    },
+    mounted() {
+        // 網頁一開啟，立刻去底層記憶體撈取自動存檔的資料
+        this.loadFromLocal();
     },
     methods: {
         // 修復電腦版橫向滾動
@@ -849,6 +931,194 @@ createApp({
                 }
             });
             // 已移除原本依照時間重新排序的邏輯，保留使用者貼上的文字順序
+        
+       },
+        getAllData() {
+            return JSON.stringify({
+                tripTitle: this.tripTitle,
+                days: this.days,
+                itineraries: this.itineraries,
+                todos: this.todos,
+                shoppingList: this.shoppingList,
+                infoStation: this.infoStation
+            });
+        },
+        // 新增：寫入瀏覽器底層記憶體
+        saveToLocal() {
+            localStorage.setItem('myTripAutoSave', this.getAllData());
+        },
+        // 新增：從瀏覽器底層記憶體讀取
+        loadFromLocal() {
+            const localData = localStorage.getItem('myTripAutoSave');
+            if (localData) {
+                this.restoreData(localData, true); // true 代表靜默還原，不跳通知
+            }
+        },
+        // 修改：加入 silent 參數，控制是否要跳出警告視窗
+        restoreData(jsonStr, silent = false) {
+            try {
+                const data = JSON.parse(jsonStr);
+                if (data.tripTitle !== undefined) this.tripTitle = data.tripTitle;
+                if (data.days) this.days = data.days;
+                if (data.itineraries) this.itineraries = data.itineraries;
+                if (data.todos) this.todos = data.todos;
+                if (data.shoppingList) this.shoppingList = data.shoppingList;
+                if (data.infoStation) this.infoStation = data.infoStation;
+                
+                if (!silent) alert('資料還原成功！');
+                if (this.dayViewMode === 'map') this.updateMapMarkers();
+                this.showSyncModal = false;
+            } catch (e) {
+                if (!silent) alert('資料格式錯誤，還原失敗。');
+            }
+        },
+        async copySyncCode() {
+            try {
+                await navigator.clipboard.writeText(this.getAllData());
+                alert('已複製完整行程代碼！您可至其他裝置貼上此代碼。');
+            } catch (e) {
+                alert('瀏覽器不支援自動複製，請改用檔案下載方式。');
+            }
+        },
+        async pasteSyncCode() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if(text) this.restoreData(text);
+            } catch (e) {
+                const manualText = prompt('請手動貼上行程代碼：');
+                if(manualText) this.restoreData(manualText);
+            }
+        },
+        downloadJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(this.getAllData());
+            const downloadNode = document.createElement('a');
+            downloadNode.setAttribute("href", dataStr);
+            downloadNode.setAttribute("download", this.tripTitle + "-備份.json");
+            document.body.appendChild(downloadNode);
+            downloadNode.click();
+            downloadNode.remove();
+        },
+        uploadJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.restoreData(e.target.result);
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        },
+        async saveToCloud() {
+            if (!this.gasUrl) return alert('請先輸入 GAS 網址');
+            this.isSyncing = true;
+            this.syncMessage = '正在上傳至雲端試算表...';
+            try {
+                const response = await fetch(this.gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'save',
+                        sheetName: this.tripTitle,
+                        data: this.getAllData()
+                    }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // 避免觸發 CORS 預檢
+                });
+                const result = await response.json();
+                if (result.success) {
+                    this.syncSuccess = true;
+                    this.syncMessage = '雲端備份成功！';
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                this.syncSuccess = false;
+                this.syncMessage = '同步失敗：' + error.message;
+            } finally {
+                this.isSyncing = false;
+            }
+        },
+        createNewTrip() {
+            if(!confirm('建立新行程前，請確認您已將目前進度【備份至雲端】！\n\n確定要清空並建立嗎？')) return;
+            
+            const newTitle = prompt('請輸入新行程名稱：', '我的全新旅程');
+            if(!newTitle) return;
+
+            // 清空核心資料
+            this.tripTitle = newTitle;
+            this.days = [];
+            this.itineraries = {};
+            this.infoStation = { '資訊整理': [], '備用參考景點': [], '緊急醫療': [] };
+            this.currentTab = 'todo';
+            this.dayViewMode = 'list';
+            
+            // 清除地圖標記
+            this.markers.forEach(m => { if(this.mapObject) this.mapObject.removeLayer(m); });
+            this.markers = [];
+            
+            // 處理樣板保留邏輯
+            if (!this.keepTemplates) {
+                this.todos = [];
+                this.shoppingList = [];
+            } else {
+                // 若保留，則僅將所有已勾選狀態取消，清單項目留存
+                this.todos.forEach(t => t.done = false);
+                this.shoppingList.forEach(s => s.bought = false);
+            }
+            
+            alert('✨ 已成功建立全新空白行程！');
+            this.showSyncModal = false;
+        },
+        async fetchCloudList() {
+            if (!this.gasUrl) return alert('請先輸入 GAS 網址');
+            this.isSyncing = true;
+            this.syncMessage = '正在讀取雲端行程目錄...';
+            try {
+                const response = await fetch(this.gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'list' }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+                if (result.success && result.list) {
+                    this.cloudTrips = result.list;
+                    this.syncSuccess = true;
+                    this.syncMessage = '目錄讀取成功！請從下方選單選擇。';
+                } else {
+                    throw new Error(result.error || '無法讀取目錄，請確認網址或權限');
+                }
+            } catch (error) {
+                this.syncSuccess = false;
+                this.syncMessage = '目錄讀取失敗：' + error.message;
+            } finally {
+                this.isSyncing = false;
+            }
+        },
+        async loadSelectedCloudTrip() {
+            if (!this.selectedCloudTrip || !this.gasUrl) return;
+            this.isSyncing = true;
+            this.syncMessage = `正在下載「${this.selectedCloudTrip}」...`;
+            try {
+                const response = await fetch(this.gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'load',
+                        sheetName: this.selectedCloudTrip
+                    }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+                if (result.success && result.data) {
+                    this.restoreData(result.data);
+                    this.syncSuccess = true;
+                    this.syncMessage = '雲端行程讀取成功！';
+                } else {
+                    throw new Error(result.error || '讀取資料失敗');
+                }
+            } catch (error) {
+                this.syncSuccess = false;
+                this.syncMessage = '下載失敗：' + error.message;
+            } finally {
+                this.isSyncing = false;
+            }
         }
     }
 }).mount('#app')
