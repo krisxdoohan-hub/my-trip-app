@@ -74,10 +74,13 @@
             </div>
             
             <div class="flex items-center space-x-4">
-                <button @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
+                <button v-if="!isGuestMode" @click="shareGuestUrl" class="text-morandi-dark hover:text-morandi-deep transition" title="分享訪客行程">
+                    <i class="fa-solid fa-share-nodes text-lg"></i>
+                </button>
+                <button v-if="!isGuestMode" @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
                     <i class="fa-solid fa-cloud text-lg"></i>
                 </button>
-                <button @click="showImportModal = true" class="cursor-pointer text-morandi-dark hover:text-morandi-deep transition" title="智慧匯入行程">
+                <button v-if="!isGuestMode" @click="showImportModal = true" class="cursor-pointer text-morandi-dark hover:text-morandi-deep transition" title="智慧匯入行程">
                     <i class="fa-solid fa-file-import text-lg"></i>
                 </button>
                 <button @click="showShoppingModal = true" class="text-morandi-dark hover:text-morandi-deep transition relative" title="購物清單">
@@ -195,7 +198,7 @@
                         <div class="flex items-center space-x-2.5">
                             <input type="checkbox" v-model="item.completed" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
                             <span class="text-xs px-2 py-0.5 rounded-full" :class="getCategoryStyle(item.category)">
-                                {{ item.category }}
+                                {{ getCategoryIcon(item.category) }} {{ item.category }}
                             </span>
                         </div>
 
@@ -292,7 +295,7 @@
             </div>
             
             <div class="flex justify-center pt-2 pb-4">
-                <span class="text-[10px] text-gray-300 font-mono tracking-widest">v{{ appVersion }}</span>
+                <span class="text-[10px] text-gray-500 font-mono tracking-widest">v{{ appVersion }}</span>
             </div>
         </div>
 
@@ -348,6 +351,7 @@
                     <label class="block text-text-sub mb-1 font-medium">分類項目</label>
                     <select v-model="modalData.category" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50">
                         <option value="景點">⛩️ 景點</option>
+                        <option value="住宿">🏨 住宿</option>
                         <option value="交通">🚇 交通</option>
                         <option value="航班">✈️ 航班</option>
                         <option value="美食">🍜 美食</option>
@@ -480,7 +484,26 @@ const { createApp } = Vue;
 
 createApp({
     data() {
+        // 1. 讀取網址參數與準備還原路徑
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuestUrl = urlParams.get('guest') === '1';
+        const isUnlockUrl = urlParams.get('unlock') === '1';
+        const cleanUrl = window.location.origin + window.location.pathname;
+
+        // 2. 萬一管理者誤觸訪客網址，輸入 ?unlock=1 即可觸發解鎖並自動導回主頁
+        if (isUnlockUrl) {
+            localStorage.removeItem('guestModeFlag');
+            alert('🔓 管理者模式已成功解鎖！將自動重新載入主頁面。');
+            window.location.href = cleanUrl; 
+        } else if (isGuestUrl) {
+            localStorage.setItem('guestModeFlag', 'true');
+        }
+
+        // 3. 最終身分判定
+        const finalIsGuest = isGuestUrl || localStorage.getItem('guestModeFlag') === 'true';
+
         return {
+            isGuestMode: finalIsGuest,
             appVersion: '0.0.0.2',
             tripTitle: '我的全新旅程',
             isEditingTitle: false,
@@ -592,13 +615,28 @@ createApp({
         itineraries: { deep: true, handler() { this.saveToLocal(); } },
         todos: { deep: true, handler() { this.saveToLocal(); } },
         shoppingList: { deep: true, handler() { this.saveToLocal(); } },
-        infoStation: { deep: true, handler() { this.saveToLocal(); } }
+        infoStation: { deep: true, handler() { this.saveToLocal(); } },
+        gasUrl() { this.saveToLocal(); }
     },
     mounted() {
         // 網頁一開啟，立刻去底層記憶體撈取自動存檔的資料
         this.loadFromLocal();
     },
     methods: {
+        // 產生並複製訪客專用網址
+        shareGuestUrl() {
+            // 取得目前的乾淨網址 (去掉後面可能帶有的參數)
+            const cleanUrl = window.location.origin + window.location.pathname;
+            const guestUrl = cleanUrl + '?guest=1';
+            
+            // 嘗試複製到剪貼簿
+            navigator.clipboard.writeText(guestUrl).then(() => {
+                alert('✅ 已複製「訪客專屬網址」！\n\n您可以將網址貼給親友。他們點開後，將無法看到「分享、同步、匯入」等功能鍵。');
+            }).catch(err => {
+                // 如果使用者的瀏覽器不支援自動複製，改用手動複製框
+                prompt('請手動複製以下訪客專屬網址分享給親友：', guestUrl);
+            });
+        },
         // 修復電腦版橫向滾動
         handleTabScroll(e) {
             if (e.deltaY !== 0) {
@@ -662,9 +700,22 @@ createApp({
                 });
             });
         },
+        getCategoryIcon(cat) {
+            const icons = {
+                '景點': '⛩️',
+                '住宿': '🏨',
+                '交通': '🚇',
+                '航班': '✈️',
+                '美食': '🍜',
+                '購物': '🛍️',
+                '其他': '📍'
+            };
+            return icons[cat] || '📍';
+        },
         getCategoryStyle(cat) {
             const styles = {
                 '景點': 'bg-teal-50 text-teal-700 border border-teal-100',
+                '住宿': 'bg-rose-50 text-rose-700 border border-rose-100',
                 '交通': 'bg-blue-50 text-blue-700 border border-blue-100',
                 '航班': 'bg-indigo-50 text-indigo-700 border border-indigo-100',
                 '美食': 'bg-orange-50 text-orange-700 border border-orange-100',
@@ -914,6 +965,7 @@ createApp({
                 let category = '景點';
                 // 擴充判斷條件以符合 Word 中的用詞
                 if (location.includes('拉麵') || location.includes('飯') || location.includes('美食') || location.includes('餐廳') || location.includes('料亭') || location.includes('食堂')) category = '美食';
+                else if (location.includes('飯店') || location.includes('酒店') || location.includes('旅館') || location.includes('住宿') || location.includes('民宿')) category = '住宿';
                 else if (location.includes('地鐵') || location.includes('新幹線') || location.includes('巴士') || location.includes('乘車') || location.includes('交通') || location.includes('車站')) category = '交通';
                 else if (location.includes('搭機') || location.includes('航班') || location.includes('機場')) category = '航班';
                 else if (location.includes('購物') || location.includes('買') || location.includes('百貨') || location.includes('商場') || location.includes('超市')) category = '購物';
@@ -940,7 +992,8 @@ createApp({
                 itineraries: this.itineraries,
                 todos: this.todos,
                 shoppingList: this.shoppingList,
-                infoStation: this.infoStation
+                infoStation: this.infoStation,
+                gasUrl: this.gasUrl
             });
         },
         // 新增：寫入瀏覽器底層記憶體
@@ -964,6 +1017,7 @@ createApp({
                 if (data.todos) this.todos = data.todos;
                 if (data.shoppingList) this.shoppingList = data.shoppingList;
                 if (data.infoStation) this.infoStation = data.infoStation;
+                if (data.gasUrl !== undefined) this.gasUrl = data.gasUrl;
                 
                 if (!silent) alert('資料還原成功！');
                 if (this.dayViewMode === 'map') this.updateMapMarkers();
