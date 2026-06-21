@@ -415,9 +415,9 @@
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <button @click="copySyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-regular fa-copy mr-1"></i>複製代碼</button>
                     <button @click="pasteSyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-paste mr-1"></i>貼上代碼</button>
-                    <button @click="downloadJSON" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-download mr-1"></i>下載檔案</button>
+                    <button @click="downloadJSON" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-download mr-1"></i>匯出 JSON 備份</button>
                     <label class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 text-center cursor-pointer transition">
-                        <i class="fa-solid fa-upload mr-1"></i>上傳檔案
+                        <i class="fa-solid fa-file-import mr-1"></i>匯入 JSON 檔案
                         <input type="file" accept=".json" class="hidden" @change="uploadJSON">
                     </label>
                 </div>
