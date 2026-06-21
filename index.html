@@ -77,10 +77,10 @@
                 <button v-if="!isGuestMode" @click="shareGuestUrl" class="text-morandi-dark hover:text-morandi-deep transition" title="分享訪客行程">
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
-                <button v-if="!isGuestMode" @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
+                <button @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
                     <i class="fa-solid fa-cloud text-lg"></i>
                 </button>
-                <button v-if="!isGuestMode" @click="showImportModal = true" class="cursor-pointer text-morandi-dark hover:text-morandi-deep transition" title="智慧匯入行程">
+                <button @click="showImportModal = true" class="cursor-pointer text-morandi-dark hover:text-morandi-deep transition" title="智慧匯入行程">
                     <i class="fa-solid fa-file-import text-lg"></i>
                 </button>
                 <button @click="showShoppingModal = true" class="text-morandi-dark hover:text-morandi-deep transition relative" title="購物清單">
@@ -436,7 +436,7 @@
                 </div>
             </div>
 
-            <div class="space-y-3 mt-4">
+            <div v-if="!isGuestMode" class="space-y-3 mt-4">
                 <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">Google 雲端多行程同步</h4>
                 <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
                 <input type="text" v-model="gasUrl" placeholder="請輸入您的 GAS 網頁應用程式網址" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-xs">
