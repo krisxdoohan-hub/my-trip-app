@@ -1,4 +1,4 @@
-const APP_VERSION = '0.0.0.43';
+const APP_VERSION = '0.0.0.44';
 const CACHE_NAME = `trip-app-cache-v${APP_VERSION}`;
 
 // 監聽安裝事件
