@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQ1qGJpT4VKiuhefMtBu4TfGHCAh_dpoA"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD**************"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     
     <script>
@@ -529,7 +529,7 @@ createApp({
 
         return {
             isGuestMode: finalIsGuest,
-            appVersion: '0.0.0.4 -260629-UX視覺空間極大化版 ',
+            appVersion: '0.0.0.41 -260629-地圖呼叫修正 ',
             tripTitle: '我的全新旅程',
             isEditingTitle: false,
             currentTab: 'todo',
@@ -852,6 +852,11 @@ createApp({
         },
         async updateMapMarkers() {
             if (!this.mapObject || typeof google === 'undefined') return;
+            
+            // 新增：產生本次執行的唯一識別碼，避免異步競爭 (Race Condition) 導致標記疊加
+            const currentExecutionId = Symbol();
+            this._mapExecutionId = currentExecutionId;
+
             this.markers.forEach(m => m.setMap(null));
             this.markers = [];
             const currentItems = this.currentItinerary;
@@ -862,6 +867,9 @@ createApp({
             const geocoder = new google.maps.Geocoder();
 
             for (let i = 0; i < currentItems.length; i++) {
+                // 新增：如果在等待 API 過程中，使用者切換了天數，則立即中斷舊的迴圈，節省 API 額度
+                if (this._mapExecutionId !== currentExecutionId) return;
+
                 const item = currentItems[i];
                 if (item.lat && item.lng) {
                     const location = new google.maps.LatLng(item.lat, item.lng);
@@ -905,10 +913,14 @@ createApp({
                 }
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
-            if (this.markers.length > 0) {
-                this.mapObject.fitBounds(bounds);
+            
+            // 新增：最後重設畫布定位與關閉載入狀態前，再次確認是否為最新執行緒
+            if (this._mapExecutionId === currentExecutionId) {
+                if (this.markers.length > 0) {
+                    this.mapObject.fitBounds(bounds);
+                }
+                this.isMapLoading = false;
             }
-            this.isMapLoading = false;
         },
         triggerGeolocation() {
             if (!this.mapObject || typeof google === 'undefined') return;
