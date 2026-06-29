@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#94a3b8">
+    <meta name="theme-color" content="#7A9A74">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -26,48 +26,64 @@
             theme: {
                 extend: {
                     colors: {
+                        white: '#FAF6EB',
+                        gray: {
+                            50: '#F4EFE6',
+                            100: '#EAE3D2',
+                            200: '#D4C9B3',
+                            300: '#BDB19C'
+                        },
                         morandi: {
-                            light: '#f1f5f9',   /* 極淺灰藍：用於區塊底色 */
-                            accent: '#cbd5e1',  /* 淺灰藍：用於邊框或次要強調 */
-                            DEFAULT: '#94a3b8', /* 主色莫蘭迪藍：用於按鈕與圖示 */
-                            dark: '#64748b',    /* 深灰藍：用於標題或重要圖示 */
-                            deep: '#475569'     /* 極深藍灰：用於強烈對比文字 */
+                            light: '#EAE3D2',
+                            accent: '#D4C9B3',
+                            DEFAULT: '#7A9A74',
+                            dark: '#5C7A58',
+                            deep: '#435E3F'
                         },
                         text: {
-                            main: '#334155',    /* 配合藍色系的深色主字體 */
-                            sub: '#64748b'      /* 配合藍色系的次要字體 */
+                            main: '#4A4A4A',
+                            sub: '#737373'
                         }
                     }
                 }
             }
         }
     </script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .btn-primary { @apply bg-morandi text-white px-4 py-2 rounded-xl hover:bg-morandi-dark active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center; }
+            .btn-secondary { @apply bg-[#FAF6EB] border border-morandi text-morandi-dark px-4 py-2 rounded-xl hover:bg-morandi-light active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center; }
+            .btn-danger { @apply bg-red-50 text-red-500 border border-red-200 px-4 py-2 rounded-xl hover:bg-red-100 active:scale-95 disabled:opacity-50 transition-all duration-200 flex items-center justify-center; }
+            .btn-icon { @apply text-morandi-dark hover:text-morandi-deep active:scale-90 disabled:opacity-50 transition-all duration-200; }
+            .input-field { @apply w-full border border-gray-200 px-4 py-2 rounded-xl bg-[#F4EFE6] outline-none focus:border-morandi transition-all duration-200 text-sm; }
+            .input-error { @apply border-red-500 focus:border-red-500 ring-1 ring-red-200; }
+            .card-container { @apply bg-[#FAF6EB] p-4 rounded-2xl border border-gray-100 shadow-sm transition-all; }
+        }
+    </style>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            background-color: #f8fafc; /* 替換為偏冷的極淺灰底色 */
-            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px); /* 加入手帳網點效果 */
-            background-size: 24px 24px; /* 設定網點的間距 */
-            color: #334155;
+            background-color: #F4EFE6;
+            background-image: radial-gradient(#D4C9B3 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            color: #4A4A4A;
             user-select: none;
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #94a3b8; }
-        /* 確保 Google 地圖在 Modal 之下 */
         .gm-style { z-index: 10; font-family: inherit; }
     </style>
 </head>
-<body class="flex justify-center items-center h-screen w-screen overflow-hidden">
+<body class="flex justify-center items-center h-screen w-screen overflow-hidden leading-relaxed">
 
-<div id="app" class="w-full max-w-md bg-[#f1f5f9] h-full flex flex-col relative shadow-2xl overflow-hidden border border-gray-100">
+<div id="app" class="w-full max-w-md bg-[#F4EFE6] h-full flex flex-col relative shadow-2xl overflow-hidden border border-gray-100">
     
-    <header class="bg-morandi-light pt-10 pb-4 px-6 rounded-b-[2.5rem] shadow-sm flex-shrink-0 z-20">
+    <header class="bg-morandi-light pt-8 pb-3 px-5 rounded-b-[2.5rem] shadow-sm flex-shrink-0 z-20">
         <div class="flex justify-between items-center mb-4">
             <div class="flex-1 mr-4">
                 <input v-if="isEditingTitle" v-model="tripTitle" @blur="isEditingTitle = false" @keyup.enter="isEditingTitle = false" ref="titleInput"
-                       class="text-xl font-bold bg-white px-2 py-1 rounded-md w-full border border-morandi text-text-main">
+                       class="text-xl font-bold bg-[#FAF6EB] px-2 py-1 rounded-md w-full border border-morandi text-text-main outline-none">
                 <h1 v-else @click="editTitle" class="text-xl font-bold text-text-main tracking-wide flex items-center cursor-pointer group">
                     {{ tripTitle }}
                     <i class="fa-regular fa-pen-to-square text-xs ml-2 text-morandi-dark opacity-50 group-hover:opacity-100 transition"></i>
@@ -75,16 +91,16 @@
             </div>
             
             <div class="flex items-center space-x-4">
-                <button v-if="!isGuestMode" @click="shareGuestUrl" class="text-morandi-dark hover:text-morandi-deep transition" title="分享訪客行程">
+                <button v-if="!isGuestMode" @click="shareGuestUrl" class="btn-icon" title="分享訪客行程">
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
-                <button @click="showSyncModal = true" class="text-morandi-dark hover:text-morandi-deep transition" title="資料同步與轉移">
+                <button @click="showSyncModal = true" class="btn-icon" title="資料同步與轉移">
                     <i class="fa-solid fa-cloud text-lg"></i>
                 </button>
                 
-                <button @click="showShoppingModal = true" class="text-morandi-dark hover:text-morandi-deep transition relative" title="購物清單">
+                <button @click="showShoppingModal = true" class="btn-icon relative" title="購物清單">
                     <i class="fa-solid fa-basket-shopping text-lg"></i>
-                    <span v-if="remainingShoppingCount > 0" class="absolute -top-1.5 -right-1.5 bg-red-400 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    <span v-if="remainingShoppingCount > 0" class="absolute -top-1 -right-1 bg-red-400 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold" style="color: white;">
                         {{ remainingShoppingCount }}
                     </span>
                 </button>
@@ -93,39 +109,39 @@
 
         <div class="flex space-x-3 overflow-x-auto hide-scrollbar py-2 px-1" ref="tabsContainer" @wheel="handleTabScroll">
             <div @click="currentTab = 'todo'" 
-                 class="flex flex-col items-center justify-center min-w-[65px] h-[70px] rounded-2xl cursor-pointer transition-all duration-300"
-                 :class="currentTab === 'todo' ? 'bg-morandi text-white shadow-md font-semibold' : 'bg-white text-text-sub border border-gray-100'">
-                <i class="fa-solid fa-list-check text-sm mb-1"></i>
-                <span class="text-xs">TODO</span>
+                 class="flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl cursor-pointer transition-all duration-300"
+                 :class="currentTab === 'todo' ? 'bg-morandi text-white shadow-md font-semibold' : 'bg-[#FAF6EB] text-text-sub border border-gray-100 hover:bg-[#F4EFE6]'">
+                <i class="fa-solid fa-list-check text-xs mb-1"></i>
+                <span class="text-[10px]">TODO</span>
             </div>
 
             <div v-for="(day, index) in days" :key="index" 
                  @click="currentTab = 'day-' + index"
-                 class="relative flex flex-col items-center justify-center min-w-[65px] h-[70px] rounded-2xl cursor-pointer transition-all duration-300"
-                 :class="currentTab === 'day-' + index ? 'bg-morandi text-white shadow-md font-semibold' : 'bg-white text-text-sub border border-gray-100'">
-                <span class="text-[10px] opacity-80 mb-0.5">Day {{ index + 1 }}</span>
-                <span class="text-sm font-bold">{{ day.date }}</span>
-                <button v-if="currentTab === 'day-' + index" @click.stop="deleteDay(index)" class="absolute -top-1 -right-1 bg-red-400 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-sm hover:bg-red-500">
+                 class="flex-shrink-0 relative flex flex-col items-center justify-center w-14 h-16 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm"
+                 :style="currentTab === 'day-' + index ? { backgroundColor: currentThemeColor, color: '#FAF6EB', fontWeight: '600' } : { backgroundColor: '#FAF6EB', color: '#737373', border: '1px solid #EAE3D2' }">
+                <span class="text-[9px] opacity-80 mb-0.5">Day {{ index + 1 }}</span>
+                <span class="text-xs font-bold">{{ day.date }}</span>
+                <button v-if="currentTab === 'day-' + index" @click.stop="deleteDay(index)" class="absolute -top-1 -right-1 bg-red-400 rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-sm hover:bg-red-500 active:scale-90 transition-transform" style="color: white;">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <div @click="addNewDay" 
-                 class="flex flex-col items-center justify-center min-w-[65px] h-[70px] rounded-2xl cursor-pointer transition-all duration-300 bg-gray-50 border border-dashed border-gray-300 text-gray-400 hover:text-morandi hover:border-morandi">
-                <i class="fa-solid fa-plus text-sm mb-1"></i>
-                <span class="text-[10px]">新增天數</span>
+                 class="flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl cursor-pointer transition-all duration-300 bg-gray-50 border border-dashed border-gray-300 text-gray-400 hover:text-morandi hover:border-morandi active:scale-95">
+                <i class="fa-solid fa-plus text-xs mb-1"></i>
+                <span class="text-[9px]">新增天數</span>
             </div>
 
             <div @click="currentTab = 'info'" 
-                 class="flex flex-col items-center justify-center min-w-[65px] h-[70px] rounded-2xl cursor-pointer transition-all duration-300"
-                 :class="currentTab === 'info' ? 'bg-morandi text-white shadow-md font-semibold' : 'bg-white text-text-sub border border-gray-100'">
-                <i class="fa-solid fa-circle-info text-sm mb-1"></i>
-                <span class="text-xs">資訊站</span>
+                 class="flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl cursor-pointer transition-all duration-300"
+                 :class="currentTab === 'info' ? 'bg-morandi text-white shadow-md font-semibold' : 'bg-[#FAF6EB] text-text-sub border border-gray-100 hover:bg-[#F4EFE6]'">
+                <i class="fa-solid fa-circle-info text-xs mb-1"></i>
+                <span class="text-[10px]">資訊站</span>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto hide-scrollbar p-5 pb-24 bg-[#f1f5f9]">
+    <main class="flex-1 overflow-y-auto hide-scrollbar p-4 pb-20 bg-[#F4EFE6]">
         
         <div v-if="currentTab === 'todo'" class="space-y-4">
             <div class="flex items-center justify-between border-b border-gray-100 pb-2">
@@ -135,23 +151,26 @@
                 <span class="text-xs text-text-sub">已完成 {{ completedTodoCount }}/{{ todos.length }}</span>
             </div>
             
-            <div class="flex space-x-2">
-                <input v-model="newTodoText" @keyup.enter="addTodo" type="text" placeholder="新增待辦事項..." 
-                       class="flex-1 text-sm px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                <button @click="addTodo" class="bg-morandi text-white px-4 rounded-xl hover:bg-morandi-dark transition">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
+            <div class="flex flex-col space-y-2">
+                <div class="flex space-x-2">
+                    <input v-model="newTodoText" @keyup.enter="addTodo" @input="todoError = false" type="text" placeholder="新增待辦事項..." 
+                           class="input-field flex-1" :class="{'input-error': todoError}">
+                    <button @click="addTodo" class="btn-primary">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <span v-if="todoError" class="text-red-500 text-xs px-2">請輸入待辦事項內容</span>
             </div>
 
-            <div class="space-y-2.5 mt-2">
+            <div class="space-y-2 mt-2">
                 <div v-for="(todo, idx) in todos" :key="idx" 
-                     class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between transition-all"
-                     :class="{'opacity-60 bg-gray-50': todo.done}">
-                    <label class="flex items-center space-x-3 cursor-pointer flex-1">
+                     class="card-container flex items-center justify-between"
+                     :class="{'opacity-60 bg-[#F4EFE6]': todo.done}">
+                    <label class="flex items-center space-x-4 cursor-pointer flex-1">
                         <input type="checkbox" v-model="todo.done" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
                         <span class="text-sm text-text-main" :class="{'line-through text-text-sub': todo.done}">{{ todo.text }}</span>
                     </label>
-                    <button @click="deleteTodo(idx)" class="text-gray-300 hover:text-red-400 p-1 transition">
+                    <button @click="deleteTodo(idx)" class="btn-icon text-gray-300 hover:text-red-400 p-1">
                         <i class="fa-solid fa-trash-can text-xs"></i>
                     </button>
                 </div>
@@ -161,95 +180,97 @@
 
         <div v-if="currentTab.startsWith('day-')" class="space-y-4">
             
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-morandi-light flex items-center justify-between">
-                <div class="space-y-0.5">
+            <div class="card-container flex items-center justify-between">
+                <div class="space-y-1">
                     <h4 class="text-xs font-semibold text-text-sub tracking-wider">TODAY'S PROGRESS</h4>
                     <div class="flex items-baseline space-x-2">
-                        <span class="text-2xl font-bold text-morandi-deep">{{ currentDayProgress }}%</span>
-                        <span class="text-xs text-text-sub">(剩餘 {{ remainingSpotsCount }} 個景點/行程)</span>
+                        <span class="text-2xl font-bold text-text-main">{{ currentDayProgress }}%</span>
+                        <span class="text-xs text-text-sub">(剩餘 {{ remainingSpotsCount }} 個景點)</span>
                     </div>
                 </div>
-                <div class="w-10 h-10 rounded-full border-4 border-gray-100 relative flex items-center justify-center"
-                     :style="'background: conic-gradient(#c3d4ce ' + currentDayProgress + '%, #f3f4f6 0); border: none;'">
-                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-morandi-dark">
+                <div class="w-12 h-12 rounded-full border-4 relative flex items-center justify-center"
+                     :style="'background: conic-gradient(' + currentThemeColor + ' ' + currentDayProgress + '%, transparent 0); border-color: ' + currentThemeColorLight + ';'">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-bold"
+                         :style="{ backgroundColor: '#FAF6EB', color: currentThemeColor }">
                         {{ currentDayCompletedCount }}/{{ currentItinerary.length }}
                     </div>
                 </div>
             </div>
 
-            <div class="flex space-x-4 border-b border-gray-100 mb-2 justify-center">
+            <div class="flex space-x-4 border-b border-gray-100 mb-4 justify-center">
                 <button @click="dayViewMode = 'list'" class="pb-2 text-sm font-medium transition-all px-4"
-                        :class="dayViewMode === 'list' ? 'text-morandi-dark border-b-2 border-morandi-dark font-bold' : 'text-text-sub'">
-                    <i class="fa-solid fa-route mr-1.5"></i>行程清單
+                        :class="dayViewMode === 'list' ? 'text-morandi-dark border-b-2 border-morandi-dark font-bold' : 'text-text-sub hover:text-text-main'">
+                    <i class="fa-solid fa-route mr-2"></i>行程清單
                 </button>
                 <button @click="dayViewMode = 'map'; initMap();" class="pb-2 text-sm font-medium transition-all px-4"
-                        :class="dayViewMode === 'map' ? 'text-morandi-dark border-b-2 border-morandi-dark font-bold' : 'text-text-sub'">
-                    <i class="fa-solid fa-map-location-dot mr-1.5"></i>Google 地圖
+                        :class="dayViewMode === 'map' ? 'text-morandi-dark border-b-2 border-morandi-dark font-bold' : 'text-text-sub hover:text-text-main'">
+                    <i class="fa-solid fa-map-location-dot mr-2"></i>Google 地圖
                 </button>
             </div>
 
-            <div v-if="dayViewMode === 'list'" class="space-y-3.5" ref="itineraryList">
+            <div v-if="dayViewMode === 'list'" class="space-y-4" ref="itineraryList">
                 <div v-for="(item, idx) in currentItinerary" :key="item.id || idx" 
-                     class="itinerary-item bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative flex flex-col transition-all"
-                     :class="{'bg-gray-50 border-dashed opacity-70': item.completed}">
+                     class="itinerary-item card-container relative flex flex-col"
+                     :class="{'bg-[#F4EFE6] border-dashed opacity-70': item.completed}">
                     
                     <div class="flex items-start justify-between">
-                        <div class="flex items-center space-x-2.5">
+                        <div class="flex items-center space-x-4">
                             <input type="checkbox" v-model="item.completed" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
-                            <span class="text-xs px-2 py-0.5 rounded-full" :class="getCategoryStyle(item.category)">
+                            <span class="text-xs px-2 py-1 rounded-full border" :style="{ backgroundColor: currentThemeColorLight, color: currentThemeColor, borderColor: currentThemeColor }">
                                 {{ getCategoryIcon(item.category) }} {{ item.category }}
                             </span>
                         </div>
 
-                        <div class="drag-handle cursor-move text-gray-300 hover:text-morandi-dark p-1 transition touch-none">
+                        <div class="drag-handle cursor-move text-gray-300 hover:text-morandi-dark p-2 transition active:scale-90 touch-none">
                             <i class="fa-solid fa-grip-lines text-base"></i>
                         </div>
                     </div>
 
-                    <div class="mt-2.5 pl-6">
-                        <h3 class="text-base font-bold text-text-main flex items-center flex-wrap gap-1" :class="{'line-through text-text-sub': item.completed}">
+                    <div class="mt-2 pl-8">
+                        <h3 class="text-base font-bold text-text-main flex items-center flex-wrap gap-2" :class="{'line-through text-text-sub': item.completed}">
                             {{ item.location }}
-                            <span v-if="weatherCache[item.location] && weatherCache[item.location].loading" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-0.5 rounded-full flex items-center">
+                            <span v-if="weatherCache[item.location] && weatherCache[item.location].loading" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-1 rounded-full flex items-center">
                                 <i class="fa-solid fa-spinner fa-spin text-[10px] mr-1 text-morandi-dark"></i>查詢天氣中...
                             </span>
-                            <span v-else-if="weatherCache[item.location] && weatherCache[item.location].temp" class="text-xs font-normal text-text-sub bg-blue-50 px-2 py-0.5 rounded-full flex items-center border border-blue-100" :title="weatherCache[item.location].desc">
+                            <span v-else-if="weatherCache[item.location] && weatherCache[item.location].temp" class="text-xs font-normal text-text-sub bg-[#EAE3D2] px-2 py-1 rounded-full flex items-center border border-gray-200" :title="weatherCache[item.location].desc">
                                 <span class="mr-1 text-[11px]">{{ weatherCache[item.location].icon }}</span>{{ weatherCache[item.location].temp }}
                             </span>
-                            <span v-else-if="weatherCache[item.location] && weatherCache[item.location].error" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-0.5 rounded-full flex items-center" title="無法取得天氣">
+                            <span v-else-if="weatherCache[item.location] && weatherCache[item.location].error" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-1 rounded-full flex items-center" title="無法取得天氣">
                                 <i class="fa-solid fa-cloud-slash mr-1 text-gray-400 text-[10px]"></i>--
                             </span>
-                            <span v-else @click.stop="fetchWeatherForItem(item)" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-0.5 rounded-full flex items-center cursor-pointer hover:bg-blue-50 transition">
+                            <span v-else @click.stop="fetchWeatherForItem(item)" class="text-xs font-normal text-text-sub bg-gray-100 px-2 py-1 rounded-full flex items-center cursor-pointer hover:bg-[#EAE3D2] active:scale-95 transition">
                                 <i class="fa-solid fa-cloud-sun mr-1 text-amber-500 text-[10px]"></i>查詢天氣
                             </span>
                         </h3>
-                        <p v-if="item.notes" class="text-xs text-text-sub mt-1 whitespace-pre-wrap bg-gray-50 p-2 rounded-lg border border-gray-50">
-                            <i class="fa-regular fa-sticky-note mr-1 opacity-60"></i>{{ item.notes }}
+                        <p v-if="item.notes" class="text-xs text-text-sub mt-2 whitespace-pre-wrap bg-[#F4EFE6] p-2 rounded-lg border border-gray-100">
+                            <i class="fa-regular fa-sticky-note mr-2 opacity-60"></i>{{ item.notes }}
                         </p>
                     </div>
 
-                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-50 pl-6">
-                        <button @click="openExternalNav(idx)" class="text-xs text-morandi-dark hover:text-morandi-deep flex items-center font-medium">
+                    <div class="flex justify-between items-center mt-4 pt-2 border-t border-gray-100 pl-8">
+                        <button @click="openExternalNav(idx)" class="btn-icon flex items-center font-medium text-xs">
                             <i class="fa-solid fa-diamond-turn-right mr-1 text-xs"></i>導航
                         </button>
-                        <div class="flex space-x-3 text-xs text-text-sub">
-                            <button @click="openEditModal(idx)" class="hover:text-morandi-dark"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯</button>
-                            <button @click="deleteItineraryItem(idx)" class="hover:text-red-400"><i class="fa-solid fa-trash-can mr-1"></i>刪除</button>
+                        <div class="flex space-x-4 text-xs text-text-sub">
+                            <button @click="openEditModal(idx)" class="btn-icon"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯</button>
+                            <button @click="deleteItineraryItem(idx)" class="btn-icon hover:text-red-400"><i class="fa-solid fa-trash-can mr-1"></i>刪除</button>
                         </div>
                     </div>
                 </div>
 
-                <p v-if="currentItinerary.length === 0" class="text-center text-xs text-text-sub py-10">這天還沒有安排行程，點擊下方新增吧！</p>
+                <p v-if="currentItinerary.length === 0" class="text-center text-xs text-text-sub py-8">這天還沒有安排行程，點擊下方新增吧！</p>
 
-                <button @click="openAddModal" class="w-full py-3.5 border-2 border-dashed border-morandi text-morandi-dark bg-white rounded-2xl text-sm font-medium hover:bg-morandi-light transition flex items-center justify-center space-x-2">
+                <button @click="openAddModal" class="w-full py-4 border-2 border-dashed rounded-2xl text-sm font-medium active:scale-95 transition-transform flex items-center justify-center space-x-2 hover:opacity-80"
+                        :style="{ borderColor: currentThemeColor, color: currentThemeColor, backgroundColor: '#FAF6EB' }">
                     <i class="fa-solid fa-plus-circle"></i> <span>新增行程目的地</span>
                 </button>
-                <button @click="fetchAllWeather" v-if="currentItinerary.length > 0" class="w-full py-3 bg-blue-50 border border-blue-200 text-blue-600 rounded-2xl text-xs font-medium hover:bg-blue-100 transition flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-cloud-sun"></i> <span>一鍵更新今日所有景點天氣</span>
+                <button @click="fetchAllWeather" v-if="currentItinerary.length > 0" class="btn-secondary w-full py-4 text-xs">
+                    <i class="fa-solid fa-cloud-sun mr-2"></i> <span>一鍵更新今日所有景點天氣</span>
                 </button>
             </div>
 
-            <div v-show="dayViewMode === 'map'" class="space-y-3">
-                <div class="bg-white p-3 rounded-xl border border-gray-100 text-xs text-text-sub space-y-1.5 shadow-sm">
+            <div v-show="dayViewMode === 'map'" class="space-y-4">
+                <div class="card-container text-xs text-text-sub space-y-2">
                     <div class="flex items-center space-x-2">
                         <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                         <span class="font-semibold text-text-main">Google 地圖導航</span>
@@ -258,18 +279,18 @@
                 </div>
                 
                 <div class="w-full h-80 rounded-2xl border border-gray-200 shadow-inner overflow-hidden relative">
-                    <div id="map-canvas" class="w-full h-full bg-gray-100"></div>
+                    <div id="map-canvas" class="w-full h-full bg-[#F4EFE6]"></div>
                     
-                    <div v-if="isMapLoading" class="absolute inset-0 bg-white/80 z-[20] flex flex-col items-center justify-center">
+                    <div v-if="isMapLoading" class="absolute inset-0 bg-[#FAF6EB]/80 z-[20] flex flex-col items-center justify-center">
                         <i class="fa-solid fa-spinner fa-spin text-2xl text-morandi mb-2"></i>
                         <p class="text-xs font-bold text-text-main">{{ loadingMapMsg }}</p>
-                        <p class="text-[10px] text-text-sub mt-1">請稍候...</p>
+                        <p class="text-[10px] text-text-sub mt-2">請稍候...</p>
                     </div>
                 </div>
 
                 <div class="flex justify-center">
-                    <button @click="triggerGeolocation" class="bg-white border border-gray-200 shadow-sm text-text-main text-xs px-4 py-2.5 rounded-xl font-medium flex items-center space-x-1.5 hover:bg-gray-50 transition">
-                        <i class="fa-solid fa-location-crosshairs text-blue-500"></i>
+                    <button @click="triggerGeolocation" class="btn-secondary text-xs px-4 py-2">
+                        <i class="fa-solid fa-location-crosshairs text-blue-500 mr-2"></i>
                         <span>顯示我現在的位置 (GPS)</span>
                     </button>
                 </div>
@@ -277,77 +298,77 @@
 
         </div>
 
-        <div v-if="currentTab === 'info'" class="space-y-5">
+        <div v-if="currentTab === 'info'" class="space-y-4">
             <div class="flex items-center justify-between border-b border-gray-100 pb-2">
                 <h2 class="text-base font-bold text-text-main flex items-center">
                     <i class="fa-solid fa-circle-info mr-2 text-morandi-dark"></i>旅程資訊隨身站
                 </h2>
-                <button @click="openAddInfoModal" class="text-xs text-morandi-dark bg-morandi-light px-2.5 py-1 rounded-full font-medium">
+                <button @click="openAddInfoModal" class="text-xs text-morandi-dark bg-morandi-light px-4 py-1 rounded-full font-medium active:scale-95 transition-transform hover:bg-morandi-accent">
                     + 新增資訊
                 </button>
             </div>
 
-            <div v-for="(cat, catName) in infoStation" :key="catName" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-                <h3 class="text-sm font-bold text-morandi-deep flex items-center border-b border-gray-50 pb-1.5">
+            <div v-for="(cat, catName) in infoStation" :key="catName" class="card-container space-y-4">
+                <h3 class="text-sm font-bold text-morandi-deep flex items-center border-b border-gray-100 pb-2">
                     <i :class="getInfoCatIcon(catName)" class="mr-2 opacity-80"></i>{{ catName }}
                 </h3>
                 <div class="space-y-2">
-                    <div v-for="(info, iIdx) in cat" :key="iIdx" class="bg-gray-50 p-3 rounded-xl relative group">
+                    <div v-for="(info, iIdx) in cat" :key="iIdx" class="bg-[#F4EFE6] p-4 rounded-xl relative group">
                         <div class="flex justify-between items-start">
                             <h4 class="text-xs font-bold text-text-main">{{ info.title }}</h4>
-                            <button @click="deleteInfoItem(catName, iIdx)" class="text-gray-300 hover:text-red-400 text-[10px] transition">
+                            <button @click="deleteInfoItem(catName, iIdx)" class="btn-icon text-gray-300 hover:text-red-400 text-xs">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
-                        <p class="text-xs text-text-sub mt-1 whitespace-pre-wrap">{{ info.content }}</p>
+                        <p class="text-xs text-text-sub mt-2 whitespace-pre-wrap">{{ info.content }}</p>
                     </div>
-                    <p v-if="cat.length === 0" class="text-[11px] text-text-sub text-center py-2 opacity-60">暫無內容</p>
+                    <p v-if="cat.length === 0" class="text-xs text-text-sub text-center py-4 opacity-60">暫無內容</p>
                 </div>
             </div>
             
-            <div class="flex justify-center pt-2 pb-4">
+            <div class="flex justify-center pt-4 pb-4">
                 <span class="text-[10px] text-gray-500 font-mono tracking-widest">v{{ appVersion }}</span>
             </div>
         </div>
 
     </main>
 
-    <nav class="absolute bottom-0 w-full bg-white border-t border-gray-100 flex justify-around py-3 pb-5 z-30 shadow-lg">
-        <button @click="currentTab = days.length > 0 ? 'day-0' : 'todo'" class="flex flex-col items-center transition" :class="currentTab.startsWith('day-') ? 'text-morandi-dark font-semibold' : 'text-text-sub'">
-            <i class="fa-solid fa-calendar-alt text-lg mb-0.5"></i>
+    <nav class="absolute bottom-0 w-full bg-[#FAF6EB] border-t border-gray-200 flex justify-around pt-2 pb-4 z-30 shadow-lg">
+        <button @click="currentTab = days.length > 0 ? 'day-0' : 'todo'" class="flex flex-col items-center btn-icon" :class="currentTab.startsWith('day-') ? 'text-morandi-dark font-semibold' : 'text-text-sub'">
+            <i class="fa-solid fa-calendar-alt text-base mb-0.5"></i>
             <span class="text-[10px]">日常行程</span>
         </button>
-        <button @click="openAccountingApp" class="flex flex-col items-center text-text-sub hover:text-morandi-dark transition">
-            <i class="fa-solid fa-receipt text-lg mb-0.5"></i>
+        <button @click="openAccountingApp" class="flex flex-col items-center btn-icon text-text-sub">
+            <i class="fa-solid fa-receipt text-base mb-0.5"></i>
             <span class="text-[10px]">記帳分帳</span>
         </button>
-        <button @click="currentTab = 'info'" class="flex flex-col items-center transition" :class="currentTab === 'info' ? 'text-morandi-dark font-semibold' : 'text-text-sub'">
-            <i class="fa-solid fa-circle-nodes text-lg mb-0.5"></i>
+        <button @click="currentTab = 'info'" class="flex flex-col items-center btn-icon" :class="currentTab === 'info' ? 'text-morandi-dark font-semibold' : 'text-text-sub'">
+            <i class="fa-solid fa-circle-nodes text-base mb-0.5"></i>
             <span class="text-[10px]">隨身資訊</span>
         </button>
     </nav>
 
     <div v-if="showShoppingModal" class="absolute inset-0 bg-black/40 z-[9999] flex items-end justify-center transition-all">
-        <div class="bg-white w-full rounded-t-[2.5rem] max-h-[80%] flex flex-col p-6 shadow-2xl animate-slide-up">
-            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+        <div class="bg-[#FAF6EB] w-full rounded-t-[2.5rem] max-h-[80%] flex flex-col p-6 shadow-2xl animate-slide-up">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-4">
                 <h3 class="font-bold text-text-main flex items-center text-base">
                     <i class="fa-solid fa-basket-shopping text-morandi-dark mr-2"></i>代買購物清單
                 </h3>
-                <button @click="showShoppingModal = false" class="text-gray-400 text-lg hover:text-text-main"><i class="fa-solid fa-xmark"></i></button>
+                <button @click="showShoppingModal = false" class="btn-icon text-lg hover:text-text-main"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="flex space-x-2 mt-4">
-                <input v-model="newShoppingItem" @keyup.enter="addShoppingItem" type="text" placeholder="輸入想購買的商品/藥妝..." class="flex-1 text-xs px-3 py-2 border border-gray-200 rounded-xl bg-gray-50">
-                <button @click="addShoppingItem" class="bg-morandi text-white text-xs px-4 rounded-xl font-medium">新增</button>
+                <input v-model="newShoppingItem" @keyup.enter="addShoppingItem" type="text" placeholder="輸入想購買的商品/藥妝..." class="input-field flex-1">
+                <button @click="addShoppingItem" class="btn-primary text-xs">新增</button>
             </div>
 
             <div class="flex-1 overflow-y-auto hide-scrollbar mt-4 space-y-2">
-                <div v-for="(shop, sIdx) in shoppingList" :key="sIdx" class="flex items-center justify-between p-3 bg-gray-50 rounded-xl" :class="{'opacity-50': shop.bought}">
-                    <label class="flex items-center space-x-3 cursor-pointer flex-1">
+                <div v-for="(shop, sIdx) in shoppingList" :key="sIdx" class="flex items-center justify-between p-4 bg-[#F4EFE6] rounded-xl" :class="{'opacity-50': shop.bought}">
+                    <label class="flex items-center space-x-4 cursor-pointer flex-1">
                         <input type="checkbox" v-model="shop.bought" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
                         <span class="text-xs text-text-main" :class="{'line-through': shop.bought}">{{ shop.text }}</span>
                     </label>
-                    <button @click="deleteShoppingItem(sIdx)" class="text-gray-300 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    <button @click="deleteShoppingItem(sIdx)" class="btn-icon text-gray-300 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
                 </div>
                 <p v-if="shoppingList.length === 0" class="text-center text-xs text-text-sub py-8">購物清單空空如也</p>
             </div>
@@ -355,12 +376,12 @@
     </div>
 
     <div v-if="showItineraryModal" class="absolute inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-xl">
+        <div class="bg-[#FAF6EB] w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl">
             <h3 class="font-bold text-text-main text-base">{{ modalMode === 'add' ? '新增行程目的地' : '編輯行程目的地' }}</h3>
-            <div class="space-y-3 text-xs">
+            <div class="space-y-4 text-xs">
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">分類項目</label>
-                    <select v-model="modalData.category" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50">
+                    <label class="block text-text-sub mb-2 font-medium">分類項目</label>
+                    <select v-model="modalData.category" class="input-field w-full">
                         <option value="景點">⛩️ 景點</option>
                         <option value="住宿">🏨 住宿</option>
                         <option value="交通">🚇 交通</option>
@@ -371,99 +392,111 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">地點/名稱</label>
-                    <input type="text" v-model="modalData.location" placeholder="輸入地點或地標名稱" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50">
+                    <label class="block text-text-sub mb-2 font-medium">地點/名稱</label>
+                    <input type="text" v-model="modalData.location" @input="modalError = false" placeholder="輸入地點或地標名稱" class="input-field w-full" :class="{'input-error': modalError}">
+                    <span v-if="modalError" class="text-red-500 text-xs mt-1 block">地點為必填欄位</span>
                 </div>
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">行程備註</label>
-                    <textarea v-model="modalData.notes" rows="3" placeholder="填寫詳細交通方式、票券或注意事項..." class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50 resize-none"></textarea>
+                    <label class="block text-text-sub mb-2 font-medium">行程備註</label>
+                    <textarea v-model="modalData.notes" rows="3" placeholder="填寫詳細交通方式、票券或注意事項..." class="input-field w-full resize-none"></textarea>
                 </div>
             </div>
-            <div class="flex space-x-3 text-xs pt-2">
-                <button @click="showItineraryModal = false" class="flex-1 py-2.5 bg-gray-100 text-text-sub rounded-xl font-medium">取消</button>
-                <button @click="saveItineraryItem" class="flex-1 py-2.5 bg-morandi text-white rounded-xl font-medium hover:bg-morandi-dark">儲存</button>
+            <div class="flex space-x-4 text-xs pt-4">
+                <button @click="showItineraryModal = false" class="btn-secondary flex-1 border-gray-200 text-text-sub hover:bg-gray-100">取消</button>
+                <button @click="saveItineraryItem" class="btn-primary flex-1">儲存</button>
             </div>
         </div>
     </div>
 
     <div v-if="showInfoModal" class="absolute inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-xl">
+        <div class="bg-[#FAF6EB] w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl">
             <h3 class="font-bold text-text-main text-base">新增隨身站資訊</h3>
-            <div class="space-y-3 text-xs">
+            <div class="space-y-4 text-xs">
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">歸類看板</label>
-                    <select v-model="infoModalData.category" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50">
+                    <label class="block text-text-sub mb-2 font-medium">歸類看板</label>
+                    <select v-model="infoModalData.category" class="input-field w-full">
                         <option value="資訊整理">📋 資訊整理</option>
                         <option value="備用參考景點">⛩️ 備用參考景點</option>
                         <option value="緊急醫療">🚑 緊急醫療</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">標題</label>
-                    <input type="text" v-model="infoModalData.title" placeholder="例如：住宿通訊、外幣預算" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50">
+                    <label class="block text-text-sub mb-2 font-medium">標題</label>
+                    <input type="text" v-model="infoModalData.title" placeholder="例如：住宿通訊、外幣預算" class="input-field w-full">
                 </div>
                 <div>
-                    <label class="block text-text-sub mb-1 font-medium">內文細節</label>
-                    <textarea v-model="infoModalData.content" rows="4" placeholder="輸入詳細資訊..." class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50 resize-none"></textarea>
+                    <label class="block text-text-sub mb-2 font-medium">內文細節</label>
+                    <textarea v-model="infoModalData.content" rows="4" placeholder="輸入詳細資訊..." class="input-field w-full resize-none"></textarea>
                 </div>
             </div>
-            <div class="flex space-x-3 text-xs pt-2">
-                <button @click="showInfoModal = false" class="flex-1 py-2.5 bg-gray-100 text-text-sub rounded-xl font-medium">取消</button>
-                <button @click="saveInfoItem" class="flex-1 py-2.5 bg-morandi text-white rounded-xl font-medium hover:bg-morandi-dark">新增發布</button>
+            <div class="flex space-x-4 text-xs pt-4">
+                <button @click="showInfoModal = false" class="btn-secondary flex-1 border-gray-200 text-text-sub hover:bg-gray-100">取消</button>
+                <button @click="saveInfoItem" class="btn-primary flex-1">新增發布</button>
             </div>
         </div>
     </div>
 
     <div v-if="showSyncModal" class="absolute inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-xl max-h-[90%] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+        <div class="bg-[#FAF6EB] w-full max-w-sm rounded-3xl p-6 space-y-4 shadow-xl max-h-[90%] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-2">
                 <h3 class="font-bold text-text-main text-base"><i class="fa-solid fa-cloud mr-2 text-morandi-dark"></i>資料同步與轉移</h3>
-                <button @click="showSyncModal = false" class="text-gray-400 text-lg hover:text-text-main"><i class="fa-solid fa-xmark"></i></button>
+                <button @click="showSyncModal = false" class="btn-icon text-lg hover:text-text-main"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="space-y-3">
-                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">跨裝置本機轉移</h4>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button @click="copySyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-regular fa-copy mr-1"></i>複製代碼</button>
-                    <button @click="pasteSyncCode" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-paste mr-1"></i>貼上代碼</button>
-                    <button @click="downloadJSON" class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 transition"><i class="fa-solid fa-download mr-1"></i>匯出 JSON 備份</button>
-                    <label class="bg-gray-100 p-2.5 rounded-xl text-text-main hover:bg-gray-200 text-center cursor-pointer transition">
-                        <i class="fa-solid fa-file-import mr-1"></i>匯入 JSON 檔案
+            <div class="space-y-4">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1">跨裝置本機轉移</h4>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <button @click="copySyncCode" class="btn-secondary px-2"><i class="fa-regular fa-copy mr-2"></i>複製代碼</button>
+                    <button @click="pasteSyncCode" class="btn-secondary px-2"><i class="fa-solid fa-paste mr-2"></i>貼上代碼</button>
+                    <button @click="downloadJSON" class="btn-secondary px-2"><i class="fa-solid fa-download mr-2"></i>匯出 JSON</button>
+                    <label class="btn-secondary px-2 cursor-pointer m-0 text-center flex items-center justify-center">
+                        <i class="fa-solid fa-file-import mr-2"></i>匯入 JSON
                         <input type="file" accept=".json" class="hidden" @change="uploadJSON">
                     </label>
                 </div>
             </div>
 
-            <div class="space-y-3 mt-4">
-                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">一鍵建立新行程</h4>
+            <div class="space-y-4 mt-4">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1">一鍵建立新行程</h4>
                 <div class="flex flex-col space-y-2 mb-2">
-                    <label class="flex items-center space-x-2 cursor-pointer text-text-main text-xs bg-gray-50 p-2 rounded-xl border border-gray-100">
+                    <label class="flex items-center space-x-2 cursor-pointer text-text-main text-xs bg-[#F4EFE6] p-2 rounded-xl border border-gray-200">
                         <input type="checkbox" v-model="keepTemplates" class="w-4 h-4 rounded text-morandi focus:ring-morandi border-gray-300">
                         <span>保留當前待辦與購物清單 (智慧樣板)</span>
                     </label>
-                    <button @click="createNewTrip" class="w-full bg-red-50 text-red-500 border border-red-200 p-2.5 rounded-xl hover:bg-red-100 transition text-xs font-bold shadow-sm">
-                        <i class="fa-solid fa-broom mr-1"></i>清空並建立全新行程
+                    <button @click="createNewTrip" class="btn-danger w-full">
+                        <i class="fa-solid fa-broom mr-2"></i>清空並建立全新行程
                     </button>
                 </div>
             </div>
 
-            <div v-if="!isGuestMode" class="space-y-3 mt-4">
-                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-50 pb-1">Google 雲端多行程同步</h4>
+            <div v-if="!isGuestMode" class="space-y-4 mt-4">
+                <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1">Google 雲端多行程同步</h4>
                 <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
-                <input type="text" v-model="gasUrl" placeholder="請輸入您的 GAS 網頁應用程式網址" class="w-full border border-gray-200 p-2.5 rounded-xl bg-gray-50 text-xs">
+                <div>
+                    <input type="text" v-model="gasUrl" @input="gasUrlError = false" placeholder="請輸入您的 GAS 網頁應用程式網址" 
+                           class="input-field w-full" :class="{'input-error': gasUrlError}">
+                    <span v-if="gasUrlError" class="text-red-500 text-xs mt-1 block">請輸入有效網址以進行同步</span>
+                </div>
                 
                 <div class="flex space-x-2 text-xs">
-                    <button @click="saveToCloud" :disabled="isSyncing" class="flex-1 bg-morandi text-white p-2.5 rounded-xl hover:bg-morandi-dark disabled:opacity-50 transition"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>備份至雲端</button>
-                    <button @click="fetchCloudList" :disabled="isSyncing" class="flex-1 bg-white border border-morandi text-morandi-dark p-2.5 rounded-xl hover:bg-morandi-light disabled:opacity-50 transition"><i class="fa-solid fa-sync mr-1"></i>讀取雲端目錄</button>
+                    <button @click="saveToCloud" :disabled="isSyncing" class="btn-primary flex-1">
+                        <i v-if="isSyncing" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                        <i v-else class="fa-solid fa-cloud-arrow-up mr-2"></i>備份至雲端
+                    </button>
+                    <button @click="fetchCloudList" :disabled="isSyncing" class="btn-secondary flex-1">
+                        <i v-if="isSyncing" class="fa-solid fa-spinner fa-spin mr-2"></i>
+                        <i v-else class="fa-solid fa-sync mr-2"></i>讀取雲端目錄
+                    </button>
                 </div>
 
-                <div v-if="cloudTrips.length > 0" class="flex space-x-2 text-xs mt-3 bg-gray-50 p-2 rounded-xl border border-gray-100 animate-slide-up">
-                    <select v-model="selectedCloudTrip" class="flex-1 border border-gray-200 p-2 rounded-lg bg-white">
+                <div v-if="cloudTrips.length > 0" class="flex space-x-2 text-xs mt-4 bg-[#F4EFE6] p-2 rounded-xl border border-gray-200 animate-slide-up">
+                    <select v-model="selectedCloudTrip" class="input-field flex-1 bg-[#FAF6EB]">
                         <option disabled value="">請選擇要下載的雲端行程</option>
                         <option v-for="trip in cloudTrips" :key="trip" :value="trip">{{ trip }}</option>
                     </select>
-                    <button @click="loadSelectedCloudTrip" :disabled="!selectedCloudTrip || isSyncing" class="bg-morandi-dark text-white px-3 rounded-lg hover:bg-morandi-deep disabled:opacity-50 transition shadow-sm">
-                        <i class="fa-solid fa-download"></i>
+                    <button @click="loadSelectedCloudTrip" :disabled="!selectedCloudTrip || isSyncing" class="btn-primary px-4">
+                        <i v-if="isSyncing" class="fa-solid fa-spinner fa-spin"></i>
+                        <i v-else class="fa-solid fa-download"></i>
                     </button>
                 </div>
 
@@ -471,8 +504,6 @@
             </div>
         </div>
     </div>
-
-    
 
 </div>
 
@@ -498,7 +529,7 @@ createApp({
 
         return {
             isGuestMode: finalIsGuest,
-            appVersion: '0.0.0.3 -天氣修復+ google maps ',
+            appVersion: '0.0.0.4 -260629-UX視覺空間極大化版 ',
             tripTitle: '我的全新旅程',
             isEditingTitle: false,
             currentTab: 'todo',
@@ -513,6 +544,7 @@ createApp({
                 { text: '開通網卡與雙重驗證開關', done: false }
             ],
             newTodoText: '',
+            todoError: false,
             showShoppingModal: false,
             shoppingList: [
                 { text: '合利他命 EX Plus * 2', bought: false },
@@ -520,10 +552,9 @@ createApp({
             ],
             newShoppingItem: '',
 
-            
-
             showSyncModal: false,
             gasUrl: '',
+            gasUrlError: false,
             isSyncing: false,
             syncMessage: '',
             syncSuccess: true,
@@ -544,8 +575,8 @@ createApp({
             modalMode: 'add',
             editItemIndex: null,
             modalData: { category: '景點', location: '', notes: '' },
+            modalError: false,
 
-            // Google地圖相關狀態
             mapObject: null,
             markers: [],
             userMarker: null,
@@ -557,6 +588,33 @@ createApp({
         }
     },
     computed: {
+        currentThemeColor() {
+            const matchaGreen = 'hsl(120, 20%, 50%)'; 
+            if (this.currentDayIndex === null) return matchaGreen;
+            
+            const totalDays = Math.max(1, this.days.length);
+            if (totalDays <= 1) return 'hsl(15, 70%, 60%)';
+            
+            const ratio = this.currentDayIndex / (totalDays - 1);
+            const h = 15 + (120 - 15) * ratio;
+            const s = 70 + (20 - 70) * ratio;
+            const l = 60 + (50 - 60) * ratio; 
+            
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        },
+        currentThemeColorLight() {
+            const matchaGreenLight = 'hsl(120, 20%, 85%)';
+            if (this.currentDayIndex === null) return matchaGreenLight;
+            
+            const totalDays = Math.max(1, this.days.length);
+            if (totalDays <= 1) return 'hsl(15, 70%, 85%)';
+            
+            const ratio = this.currentDayIndex / (totalDays - 1);
+            const h = 15 + (120 - 15) * ratio;
+            const s = 70 + (20 - 70) * ratio;
+            
+            return `hsl(${h}, ${s}%, 85%)`;
+        },
         currentDayIndex() {
             if (this.currentTab.startsWith('day-')) {
                 return parseInt(this.currentTab.split('-')[1]);
@@ -681,34 +739,17 @@ createApp({
             });
         },
         getCategoryIcon(cat) {
-            const icons = {
-                '景點': '⛩️',
-                '住宿': '🏨',
-                '交通': '🚇',
-                '航班': '✈️',
-                '美食': '🍜',
-                '購物': '🛍️',
-                '其他': '📍'
-            };
+            const icons = { '景點': '⛩️', '住宿': '🏨', '交通': '🚇', '航班': '✈️', '美食': '🍜', '購物': '🛍️', '其他': '📍' };
             return icons[cat] || '📍';
         },
-        getCategoryStyle(cat) {
-            const styles = {
-                '景點': 'bg-teal-50 text-teal-700 border border-teal-100',
-                '住宿': 'bg-rose-50 text-rose-700 border border-rose-100',
-                '交通': 'bg-blue-50 text-blue-700 border border-blue-100',
-                '航班': 'bg-indigo-50 text-indigo-700 border border-indigo-100',
-                '美食': 'bg-orange-50 text-orange-700 border border-orange-100',
-                '購物': 'bg-purple-50 text-purple-700 border border-purple-100',
-                '其他': 'bg-gray-50 text-gray-700 border border-gray-100'
-            };
-            return styles[cat] || styles['其他'];
-        },
         addTodo() {
-            if (this.newTodoText.trim()) {
-                this.todos.push({ text: this.newTodoText.trim(), done: false });
-                this.newTodoText = '';
+            if (!this.newTodoText.trim()) {
+                this.todoError = true;
+                return;
             }
+            this.todos.push({ text: this.newTodoText.trim(), done: false });
+            this.newTodoText = '';
+            this.todoError = false;
         },
         deleteTodo(idx) {
             this.todos.splice(idx, 1);
@@ -745,18 +786,23 @@ createApp({
         },
         openAddModal() {
             this.modalMode = 'add';
+            this.modalError = false;
             this.modalData = { category: '景點', location: '', notes: '' };
             this.showItineraryModal = true;
         },
         openEditModal(idx) {
             this.modalMode = 'edit';
+            this.modalError = false;
             this.editItemIndex = idx;
             const item = this.currentItinerary[idx];
             this.modalData = { ...item };
             this.showItineraryModal = true;
         },
         saveItineraryItem() {
-            if (!this.modalData.location) return;
+            if (!this.modalData.location.trim()) {
+                this.modalError = true;
+                return;
+            }
             if (this.modalMode === 'add') {
                 const newItem = { 
                     ...this.modalData, 
@@ -770,6 +816,7 @@ createApp({
                 this.$nextTick(() => { this.fetchWeatherForItem(this.itineraries[this.currentDayIndex][this.editItemIndex]); });
             }
             this.showItineraryModal = false;
+            this.modalError = false;
             if (this.dayViewMode === 'map') this.updateMapMarkers();
         },
         deleteItineraryItem(idx) {
@@ -779,27 +826,20 @@ createApp({
         openExternalNav(idx) {
             const currentLoc = this.currentItinerary[idx].location;
             if (!currentLoc) return;
-
-            // 基本 Google Maps 導航網址 (自動帶入目的地)
             let url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentLoc)}`;
-            
-            // 若不是第一站 (idx > 0)，則將上一站設為起點
             if (idx > 0) {
                 const prevLoc = this.currentItinerary[idx - 1].location;
                 if (prevLoc) {
                     url += `&origin=${encodeURIComponent(prevLoc)}`;
                 }
             }
-            
             window.open(url, '_blank');
         },
-        // 初始化 Google 地圖
         initMap() {
             this.$nextTick(() => {
                 if (!this.mapObject && typeof google !== 'undefined') {
                     const mapEl = document.getElementById('map-canvas');
                     if (!mapEl) return;
-                    
                     this.mapObject = new google.maps.Map(mapEl, {
                         center: { lat: 23.5, lng: 121 },
                         zoom: 7,
@@ -807,18 +847,13 @@ createApp({
                         streetViewControl: false
                     });
                 }
-                
                 this.updateMapMarkers();
             });
         },
-        // 透過 Google Geocoder API 轉換座標並標記
         async updateMapMarkers() {
             if (!this.mapObject || typeof google === 'undefined') return;
-            
-            // 清除舊標記
             this.markers.forEach(m => m.setMap(null));
             this.markers = [];
-            
             const currentItems = this.currentItinerary;
             if (currentItems.length === 0) return;
 
@@ -828,29 +863,20 @@ createApp({
 
             for (let i = 0; i < currentItems.length; i++) {
                 const item = currentItems[i];
-                
-                // 1. 檢查是否已經有快取的座標，有的話直接標記並跳過 API 查詢
                 if (item.lat && item.lng) {
                     const location = new google.maps.LatLng(item.lat, item.lng);
                     const marker = new google.maps.Marker({
-                        position: location,
-                        map: this.mapObject,
-                        title: item.location
+                        position: location, map: this.mapObject, title: item.location,
+                        icon: { path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6, fillColor: this.currentThemeColor, fillOpacity: 1, strokeColor: '#FAF6EB', strokeWeight: 2 }
                     });
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `<b>${item.location}</b><br><span style="font-size:10px; color:gray;">${item.category}</span>`
-                    });
-                    marker.addListener('click', () => {
-                        infoWindow.open(this.mapObject, marker);
-                    });
+                    const infoWindow = new google.maps.InfoWindow({ content: `<b>${item.location}</b><br><span style="font-size:10px; color:gray;">${item.category}</span>` });
+                    marker.addListener('click', () => { infoWindow.open(this.mapObject, marker); });
                     this.markers.push(marker);
                     bounds.extend(location);
                     continue; 
                 }
 
-                // 2. 若無快取，才開始向 Google API 查詢
                 this.loadingMapMsg = `正在搜尋地點座標 (${i + 1}/${currentItems.length})...`;
-                
                 try {
                     const results = await new Promise((resolve, reject) => {
                         const timeoutId = setTimeout(() => reject('TIMEOUT'), 2000);
@@ -863,73 +889,39 @@ createApp({
                     
                     if (results && results.length > 0) {
                         const location = results[0].geometry.location;
-                        
-                        // 3. 將查到的經緯度寫入 item 中儲存，下次就不會再查
                         item.lat = location.lat();
                         item.lng = location.lng();
-                        
                         const marker = new google.maps.Marker({
-                            position: location,
-                            map: this.mapObject,
-                            title: item.location
+                            position: location, map: this.mapObject, title: item.location,
+                            icon: { path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6, fillColor: this.currentThemeColor, fillOpacity: 1, strokeColor: '#FAF6EB', strokeWeight: 2 }
                         });
-                        
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `<b>${item.location}</b><br><span style="font-size:10px; color:gray;">${item.category}</span>`
-                        });
-                        
-                        marker.addListener('click', () => {
-                            infoWindow.open(this.mapObject, marker);
-                        });
-                        
+                        const infoWindow = new google.maps.InfoWindow({ content: `<b>${item.location}</b><br><span style="font-size:10px; color:gray;">${item.category}</span>` });
+                        marker.addListener('click', () => { infoWindow.open(this.mapObject, marker); });
                         this.markers.push(marker);
                         bounds.extend(location);
                     }
                 } catch (error) {
                     console.error("Google地址轉換失敗:", item.location, error);
                 }
-                
-                // 稍微延遲避免觸發 Google API 頻率限制
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
-            
             if (this.markers.length > 0) {
                 this.mapObject.fitBounds(bounds);
             }
-            
             this.isMapLoading = false;
         },
-        // 獲取手機 GPS 定位
         triggerGeolocation() {
             if (!this.mapObject || typeof google === 'undefined') return;
-            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
-                    const pos = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    
+                    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
                     if (this.userMarker) this.userMarker.setMap(null);
-                    
-                    // 用紅色圓點代表目前位置
                     this.userMarker = new google.maps.Marker({
-                        position: pos,
-                        map: this.mapObject,
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: '#f03',
-                            fillOpacity: 0.5,
-                            strokeColor: 'red',
-                            strokeWeight: 2
-                        },
-                        title: "您目前的位置"
+                        position: pos, map: this.mapObject, title: "您目前的位置",
+                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f03', fillOpacity: 0.5, strokeColor: 'red', strokeWeight: 2 }
                     });
-                    
                     const infoWindow = new google.maps.InfoWindow({ content: "您目前的位置" });
                     this.userMarker.addListener('click', () => infoWindow.open(this.mapObject, this.userMarker));
-                    
                     this.mapObject.setCenter(pos);
                     this.mapObject.setZoom(15);
                 }, () => {
@@ -940,59 +932,25 @@ createApp({
             }
         },
         getWeatherInfo(code) {
-            const wmo = {
-                0:  { icon: '☀️', desc: '晴天' },
-                1:  { icon: '🌤️', desc: '大致晴朗' },
-                2:  { icon: '⛅', desc: '部分多雲' },
-                3:  { icon: '☁️', desc: '陰天' },
-                45: { icon: '🌫️', desc: '霧' },
-                48: { icon: '🌫️', desc: '霧淞' },
-                51: { icon: '🌦️', desc: '小毛毛雨' },
-                53: { icon: '🌦️', desc: '中毛毛雨' },
-                55: { icon: '🌧️', desc: '大毛毛雨' },
-                61: { icon: '🌧️', desc: '小雨' },
-                63: { icon: '🌧️', desc: '中雨' },
-                65: { icon: '🌧️', desc: '大雨' },
-                71: { icon: '❄️', desc: '小雪' },
-                73: { icon: '❄️', desc: '中雪' },
-                75: { icon: '❄️', desc: '大雪' },
-                77: { icon: '🌨️', desc: '冰晶' },
-                80: { icon: '🌦️', desc: '陣雨' },
-                81: { icon: '🌧️', desc: '中陣雨' },
-                82: { icon: '⛈️', desc: '大陣雨' },
-                85: { icon: '🌨️', desc: '陣雪' },
-                86: { icon: '🌨️', desc: '大陣雪' },
-                95: { icon: '⛈️', desc: '雷陣雨' },
-                96: { icon: '⛈️', desc: '雷陣雨夾冰雹' },
-                99: { icon: '⛈️', desc: '強雷陣雨夾冰雹' }
-            };
+            const wmo = { 0:{icon:'☀️',desc:'晴天'}, 1:{icon:'🌤️',desc:'大致晴朗'}, 2:{icon:'⛅',desc:'部分多雲'}, 3:{icon:'☁️',desc:'陰天'}, 45:{icon:'🌫️',desc:'霧'}, 48:{icon:'🌫️',desc:'霧淞'}, 51:{icon:'🌦️',desc:'小毛毛雨'}, 53:{icon:'🌦️',desc:'中毛毛雨'}, 55:{icon:'🌧️',desc:'大毛毛雨'}, 61:{icon:'🌧️',desc:'小雨'}, 63:{icon:'🌧️',desc:'中雨'}, 65:{icon:'🌧️',desc:'大雨'}, 71:{icon:'❄️',desc:'小雪'}, 73:{icon:'❄️',desc:'中雪'}, 75:{icon:'❄️',desc:'大雪'}, 77:{icon:'🌨️',desc:'冰晶'}, 80:{icon:'🌦️',desc:'陣雨'}, 81:{icon:'🌧️',desc:'中陣雨'}, 82:{icon:'⛈️',desc:'大陣雨'}, 85:{icon:'🌨️',desc:'陣雪'}, 86:{icon:'🌨️',desc:'大陣雪'}, 95:{icon:'⛈️',desc:'雷陣雨'}, 96:{icon:'⛈️',desc:'雷陣雨夾冰雹'}, 99:{icon:'⛈️',desc:'強雷陣雨夾冰雹'} };
             return wmo[code] || { icon: '🌡️', desc: '未知' };
         },
         async fetchWeatherForItem(item) {
             const loc = item.location;
             if (!loc) return;
-
-            this.weatherCache = { 
-                ...this.weatherCache, 
-                [loc]: { loading: true } 
-            };
-
+            this.weatherCache = { ...this.weatherCache, [loc]: { loading: true } };
             try {
                 let lat, lon;
                 if (typeof google !== 'undefined') {
                     const geocoder = new google.maps.Geocoder();
                     const results = await new Promise((resolve) => {
-                        const timeoutId = setTimeout(() => {
-                            resolve(null);
-                        }, 2000);
-
+                        const timeoutId = setTimeout(() => { resolve(null); }, 2000);
                         geocoder.geocode({ address: loc }, (res, status) => {
                             clearTimeout(timeoutId);
                             if (status === 'OK') resolve(res);
                             else resolve(null);
                         });
                     });
-                    
                     if (results && results.length > 0) {
                         lat = results[0].geometry.location.lat();
                         lon = results[0].geometry.location.lng();
@@ -1004,64 +962,35 @@ createApp({
                     this.weatherCache = { ...this.weatherCache, [loc]: { error: true } };
                     return;
                 }
-
-                const weatherResp = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=celsius&timezone=auto`
-                );
+                const weatherResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=celsius&timezone=auto`);
                 const weatherData = await weatherResp.json();
-
                 if (weatherData && weatherData.current) {
                     const temp = Math.round(weatherData.current.temperature_2m);
                     const code = weatherData.current.weather_code;
                     const info = this.getWeatherInfo(code);
-                    this.weatherCache = {
-                        ...this.weatherCache,
-                        [loc]: {
-                            temp: `${temp}°C`,
-                            desc: info.desc,
-                            icon: info.icon,
-                            loading: false
-                        }
-                    };
+                    this.weatherCache = { ...this.weatherCache, [loc]: { temp: `${temp}°C`, desc: info.desc, icon: info.icon, loading: false } };
                 } else {
                     this.weatherCache = { ...this.weatherCache, [loc]: { error: true } };
                 }
             } catch (err) {
-                console.error('天氣查詢失敗:', loc, err);
                 this.weatherCache = { ...this.weatherCache, [loc]: { error: true } };
             }
         },
         async fetchAllWeather() {
             const items = this.currentItinerary;
             if (!items || items.length === 0) return;
-            
             for (let i = 0; i < items.length; i++) {
-                if (i > 0) {
-                    await new Promise(r => setTimeout(r, 1200));
-                }
+                if (i > 0) await new Promise(r => setTimeout(r, 1200));
                 await this.fetchWeatherForItem(items[i]);
             }
         },
-        
         getAllData() {
-            return JSON.stringify({
-                tripTitle: this.tripTitle,
-                days: this.days,
-                itineraries: this.itineraries,
-                todos: this.todos,
-                shoppingList: this.shoppingList,
-                infoStation: this.infoStation,
-                gasUrl: this.gasUrl
-            });
+            return JSON.stringify({ tripTitle: this.tripTitle, days: this.days, itineraries: this.itineraries, todos: this.todos, shoppingList: this.shoppingList, infoStation: this.infoStation, gasUrl: this.gasUrl });
         },
-        saveToLocal() {
-            localStorage.setItem('myTripAutoSave', this.getAllData());
-        },
+        saveToLocal() { localStorage.setItem('myTripAutoSave', this.getAllData()); },
         loadFromLocal() {
             const localData = localStorage.getItem('myTripAutoSave');
-            if (localData) {
-                this.restoreData(localData, true);
-            }
+            if (localData) this.restoreData(localData, true);
         },
         restoreData(jsonStr, silent = false) {
             try {
@@ -1073,7 +1002,6 @@ createApp({
                 if (data.shoppingList) this.shoppingList = data.shoppingList;
                 if (data.infoStation) this.infoStation = data.infoStation;
                 if (data.gasUrl !== undefined) this.gasUrl = data.gasUrl;
-                
                 if (!silent) alert('資料還原成功！');
                 if (this.dayViewMode === 'map') this.updateMapMarkers();
                 this.showSyncModal = false;
@@ -1118,17 +1046,16 @@ createApp({
             reader.readAsText(file);
         },
         async saveToCloud() {
-            if (!this.gasUrl) return alert('請先輸入 GAS 網址');
+            if (!this.gasUrl.trim()) {
+                this.gasUrlError = true;
+                return;
+            }
             this.isSyncing = true;
             this.syncMessage = '正在上傳至雲端試算表...';
             try {
                 const response = await fetch(this.gasUrl, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action: 'save',
-                        sheetName: this.tripTitle,
-                        data: this.getAllData()
-                    }),
+                    body: JSON.stringify({ action: 'save', sheetName: this.tripTitle, data: this.getAllData() }),
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
                 const result = await response.json();
@@ -1147,20 +1074,16 @@ createApp({
         },
         createNewTrip() {
             if(!confirm('建立新行程前，請確認您已將目前進度【備份至雲端】！\n\n確定要清空並建立嗎？')) return;
-            
             const newTitle = prompt('請輸入新行程名稱：', '我的全新旅程');
             if(!newTitle) return;
-
             this.tripTitle = newTitle;
             this.days = [];
             this.itineraries = {};
             this.infoStation = { '資訊整理': [], '備用參考景點': [], '緊急醫療': [] };
             this.currentTab = 'todo';
             this.dayViewMode = 'list';
-            
             this.markers.forEach(m => { if(m) m.setMap(null); });
             this.markers = [];
-            
             if (!this.keepTemplates) {
                 this.todos = [];
                 this.shoppingList = [];
@@ -1168,12 +1091,14 @@ createApp({
                 this.todos.forEach(t => t.done = false);
                 this.shoppingList.forEach(s => s.bought = false);
             }
-            
             alert('✨ 已成功建立全新空白行程！');
             this.showSyncModal = false;
         },
         async fetchCloudList() {
-            if (!this.gasUrl) return alert('請先輸入 GAS 網址');
+            if (!this.gasUrl.trim()) {
+                this.gasUrlError = true;
+                return;
+            }
             this.isSyncing = true;
             this.syncMessage = '正在讀取雲端行程目錄...';
             try {
@@ -1204,10 +1129,7 @@ createApp({
             try {
                 const response = await fetch(this.gasUrl, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action: 'load',
-                        sheetName: this.selectedCloudTrip
-                    }),
+                    body: JSON.stringify({ action: 'load', sheetName: this.selectedCloudTrip }),
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
                 const result = await response.json();
@@ -1231,12 +1153,8 @@ createApp({
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('PWA ServiceWorker 註冊成功');
-                })
-                .catch(error => {
-                    console.log('PWA ServiceWorker 註冊失敗:', error);
-                });
+                .then(registration => { console.log('PWA ServiceWorker 註冊成功'); })
+                .catch(error => { console.log('PWA ServiceWorker 註冊失敗:', error); });
         });
     }
 </script>
