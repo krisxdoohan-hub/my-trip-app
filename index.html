@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQ1qGJpT4VKiuhefMtBu4TfGHCAh_dpoA"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=++++++++++++++"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     
     <script>
@@ -517,7 +517,7 @@ const MapManager = {
     markers: [],
     userMarker: null,
     geocoder: null,
-    locationCache: {}, 
+    locationCache: JSON.parse(localStorage.getItem('myTripLocationCache') || '{}'), 
     abortController: null,
     
     init(elementId) {
@@ -590,6 +590,7 @@ const MapManager = {
                     item.lat = coords.lat; 
                     item.lng = coords.lng;
                     this.locationCache[item.location] = coords; 
+                    localStorage.setItem('myTripLocationCache', JSON.stringify(this.locationCache));
                     this.addMarker(coords.lat, coords.lng, item, themeColor, bounds);
                 }
             } catch (err) {
@@ -672,7 +673,7 @@ createApp({
 
         return {
             isGuestMode: finalIsGuest,
-            appVersion: '0.0.0.44 -260630-地圖呼叫修正 ',
+            appVersion: '0.0.0.45 -260630-地圖呼叫修正 ',
             tripTitle: '我的全新旅程',
             isEditingTitle: false,
             currentTab: 'todo',
@@ -1042,7 +1043,13 @@ methods: {
             this.weatherCache = { ...this.weatherCache, [loc]: { loading: true } };
             try {
                 let lat, lon;
-                if (typeof google !== 'undefined') {
+                if (item.lat && item.lng) {
+                    lat = item.lat;
+                    lon = item.lng;
+                } else if (MapManager.locationCache && MapManager.locationCache[loc]) {
+                    lat = MapManager.locationCache[loc].lat;
+                    lon = MapManager.locationCache[loc].lng;
+                } else if (typeof google !== 'undefined') {
                     const geocoder = new google.maps.Geocoder();
                     const results = await new Promise((resolve) => {
                         const timeoutId = setTimeout(() => { resolve(null); }, 2000);
@@ -1055,6 +1062,8 @@ methods: {
                     if (results && results.length > 0) {
                         lat = results[0].geometry.location.lat();
                         lon = results[0].geometry.location.lng();
+                        MapManager.locationCache[loc] = { lat: lat, lng: lon };
+                        localStorage.setItem('myTripLocationCache', JSON.stringify(MapManager.locationCache));
                     } else {
                         this.weatherCache = { ...this.weatherCache, [loc]: { error: true } };
                         return;
