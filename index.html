@@ -553,12 +553,14 @@
                 </template>
 
                 <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1 mt-4">Google 雲端多行程同步</h4>
-                <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
-                <div>
-                    <input type="text" v-model="gasUrl" @input="gasUrlError = false" placeholder="請輸入您的 GAS 網頁應用程式網址"
-                           class="input-field w-full" :class="{'input-error': gasUrlError}">
-                    <span v-if="gasUrlError" class="text-red-500 text-xs mt-1 block">請輸入有效網址以進行同步</span>
-                </div>
+                <template v-if="!isTravelGuest">
+                    <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
+                    <div>
+                        <input type="text" v-model="gasUrl" @input="gasUrlError = false" placeholder="請輸入您的 GAS 網頁應用程式網址"
+                               class="input-field w-full" :class="{'input-error': gasUrlError}">
+                        <span v-if="gasUrlError" class="text-red-500 text-xs mt-1 block">請輸入有效網址以進行同步</span>
+                    </div>
+                </template>
 
                 <div class="flex space-x-2 text-xs">
                     <button v-if="!isTravelGuest" @click="saveToCloud" :disabled="isSyncing" class="btn-primary flex-1">
@@ -926,7 +928,7 @@ const appInstance = createApp({
             isSuperAdmin: false,        // 🌟 新增：存放由 Firebase 探測出來的最高權限
             currentUserUid: null,
             isTripLocked: false,
-            appVersion: '0.0.0.0.46 -260714-修正BUG ',
+            appVersion: '0.0.0.0.47 -260713-修正BUG ',
             tripTitle: '我的全新旅程',
             linkTripId: '',             // 新增：獨立綁定的記帳本專案代碼
             detectedCloudTrips: [],     // 新增：系統自動偵測到的雲端歷史專案清單
@@ -1111,7 +1113,10 @@ methods: {
         },
         openAccountingApp() {
             if (!this.linkTripId || this.linkTripId.trim() === '') {
-                alert('請先點擊上方雲朵圖示 (資料同步與轉移)，設定並綁定【記帳本專案代碼】！');
+                // 解除死結：未綁定時不再阻擋，而是引導建立新專案
+                if (confirm('目前尚未綁定記帳本專案。\n\n是否要前往記帳本系統建立「全新專案」？\n(建立完成後，系統會產生一組代碼，請再回此處進行綁定)')) {
+                    window.location.href = './split/index.html';
+                }
                 return;
             }
             const params = new URLSearchParams();
