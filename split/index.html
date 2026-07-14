@@ -4,22 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>旅遊分帳記帳本 </title>
-    <link rel="manifest" href='data:application/manifest+json;utf-8,{"name":"旅遊分帳記帳本","short_name":"旅遊記帳","start_url":".","display":"standalone","background_color":"#f4f8fb","theme_color":"#5bbce4","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <script>
         const APP_VERSION = 'v0.0.0.0.1 - 更新UI介面';
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'trip-split-cache-${APP_VERSION}';
-                    self.addEventListener('install', e => e.waitUntil(self.skipWaiting())); 
-                    self.addEventListener('activate', e => {
-                        e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null))));
-                        e.waitUntil(self.clients.claim());
-                    }); 
-                    self.addEventListener('fetch', e => { e.respondWith(fetch(e.request).catch(() => new Response('Offline'))); });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker 註冊成功:', reg.scope))
+                    .catch(err => console.log('Service Worker 註冊失敗:', err));
             });
         }
     </script>
@@ -105,7 +98,7 @@
             margin: 0;
             padding: 0;
             color: var(--text-main);
-            padding-bottom: calc(var(--spacing) * 22);
+            padding-bottom: calc(var(--spacing) * 22 + env(safe-area-inset-bottom));
             line-height: 1.5;
             -webkit-overflow-scrolling: touch;
         }
@@ -185,7 +178,7 @@
         .feature-item span { font-size: 12px; font-weight: 500; }
 
         /* 底部導覽列 */
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--white); border-top-left-radius: 24px; border-top-right-radius: 24px; display: flex; justify-content: space-around; align-items: center; padding: 12px 0 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 40; }
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--white); border-top-left-radius: 24px; border-top-right-radius: 24px; display: flex; justify-content: space-around; align-items: center; padding: 12px 0 calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 50; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #dcdde1; font-size: 10px; gap: 4px; flex: 1; outline: none;}
         .nav-item.active { color: var(--primary); }
         .nav-fab { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 28px; margin-top: -30px; box-shadow: 0 4px 12px rgba(91,188,228,0.4); border: 4px solid var(--bg-color); flex: none; outline: none; }
@@ -365,6 +358,8 @@
             </div>
     </main>
 
+   </div>
+
     <nav class="bottom-nav">
         <button class="nav-item active" id="nav-home" onclick="switchPage('dashboard')">
             <span class="text-2xl">🏠</span>
@@ -386,7 +381,6 @@
             <span>結算</span>
         </button>
     </nav>
-</div>
 
     <div id="addRecordModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[100] hidden justify-center items-end sm:items-center transition-opacity duration-300 opacity-0 p-0 sm:p-4">
         
