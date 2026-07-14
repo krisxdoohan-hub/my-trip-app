@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQ1qGJpT4VKiuhefMtBu4TfGHCAh_dpoA"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=++++++++++++++"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     
     <script type="module">
@@ -401,10 +401,6 @@
             <i class="fa-solid fa-calendar-alt text-base mb-0.5"></i>
             <span class="text-[10px]">日常行程</span>
         </button>
-        <button @click="openAccountingApp" class="flex flex-col items-center btn-icon text-text-sub">
-            <i class="fa-solid fa-receipt text-base mb-0.5"></i>
-            <span class="text-[10px]">記帳分帳</span>
-        </button>
         <button @click="handleTabChange('info')" class="flex flex-col items-center btn-icon" :class="currentTab === 'info' ? 'text-morandi-dark font-semibold' : 'text-text-sub'">
             <i class="fa-solid fa-circle-nodes text-base mb-0.5"></i>
             <span class="text-[10px]">隨身資訊</span>
@@ -533,25 +529,6 @@
             </div>
 
             <div class="space-y-4 mt-4">
-                <template v-if="!isTravelGuest">
-                    <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1">系統權限與記帳本連動</h4>
-                    
-                    <div v-if="detectedCloudTrips.length > 0" class="bg-blue-50/70 border border-blue-200 p-3.5 rounded-2xl space-y-2 shadow-inner">
-                        <label class="block text-[11px] font-bold text-blue-800 tracking-wider">📌 系統偵測到您的雲端記帳專案：</label>
-                        <div class="flex gap-2">
-                            <select v-model="selectedDetectedTrip" class="input-field flex-1 bg-white font-bold text-gray-700 shadow-sm">
-                                <option disabled value="">-- 請選擇要連動的專案 --</option>
-                                <option v-for="trip in detectedCloudTrips" :key="trip" :value="trip">{{ trip }}</option>
-                            </select>
-                            <button @click="confirmDetectedTrip" class="btn-primary text-xs px-3 py-2 font-bold whitespace-nowrap shadow-sm">確定綁定</button>
-                        </div>
-                        <div v-if="linkTripId" class="text-xs text-blue-800 mt-1 font-medium bg-white/60 p-1.5 rounded-lg border border-blue-100 flex items-center justify-between">
-                            <span>目前連動專案：</span>
-                            <span class="font-bold text-blue-900 tracking-widest">{{ linkTripId }}</span>
-                        </div>
-                    </div>
-                </template>
-
                 <h4 class="text-sm font-bold text-morandi-deep border-b border-gray-100 pb-1 mt-4">Google 雲端多行程同步</h4>
                 <template v-if="!isTravelGuest">
                     <p class="text-[10px] text-text-sub">目前存檔名稱：「<span class="font-bold text-morandi-dark">{{ tripTitle }}</span>」</p>
@@ -841,40 +818,12 @@ const MapManager = {
                             }
                             if (vueAppInstance) vueAppInstance.isSuperAdmin = superAdminStatus;
 
-                            // 2. 反向讀取使用者在雲端已建立或加入的記帳專案紀錄
-                            const userDocRef = window.doc(window.firebaseDb, "users", user.uid);
-                            const userDocSnap = await window.getDoc(userDocRef);
-                            if (userDocSnap.exists() && vueAppInstance) {
-                                const tripIds = userDocSnap.data().tripIds || [];
-                                vueAppInstance.detectedCloudTrips = tripIds.map(t => t.tripId);
-                                // 將邏輯改為：不管有幾筆，如果只有一筆則預先放入下拉選單的變數中，等待使用者手動按下「確定綁定」
-                                if (vueAppInstance.detectedCloudTrips.length === 1) {
-                                    vueAppInstance.selectedDetectedTrip = vueAppInstance.detectedCloudTrips[0];
-                                }
-                            }
-
-                            // 讀取獨立綁定的 linkTripId，並強制去除空白與轉大寫，對齊記帳本的邏輯
-                            const rawTripId = (vueAppInstance && vueAppInstance.linkTripId) ? vueAppInstance.linkTripId : '';
-                            const currentTripId = rawTripId.trim().toUpperCase();
-                            
                             window.currentTravelOwnerUid = "";
                             let isMaster = false;
                             
-                            // 🌟 3. 將探測結果直接賦予全域最高權限，不再受限於是否綁定了專案
+                            // 🌟 將探測結果直接賦予全域最高權限
                             if (superAdminStatus) {
                                 isMaster = true;
-                            }
-                            
-                            if (currentTripId) {
-                                const tripDocRef = window.doc(window.firebaseDb, "trips", currentTripId);
-                                const tripDocSnap = await window.getDoc(tripDocRef);
-                                if (tripDocSnap.exists()) {
-                                    window.currentTravelOwnerUid = tripDocSnap.data().ownerUid || "";
-                                    // 依照獨立綁定專案所屬的 ownerUid 與目前登入者進行比對
-                                    if (user.uid === window.currentTravelOwnerUid) {
-                                        isMaster = true;
-                                    }
-                                }
                             }
                             
                             if (vueAppInstance) {
@@ -928,11 +877,8 @@ const appInstance = createApp({
             isSuperAdmin: false,        // 🌟 新增：存放由 Firebase 探測出來的最高權限
             currentUserUid: null,
             isTripLocked: false,
-            appVersion: '0.0.0.0.47 -260713-修正BUG ',
+            appVersion: '0.0.0.0.48 -260714-修正BUG ',
             tripTitle: '我的全新旅程',
-            linkTripId: '',             // 新增：獨立綁定的記帳本專案代碼
-            detectedCloudTrips: [],     // 新增：系統自動偵測到的雲端歷史專案清單
-            selectedDetectedTrip: '',   // 新增：下拉式選單暫時選取的代碼
             isEditingTitle: false,
             currentTab: 'todo',
             dayViewMode: 'list',
@@ -1111,19 +1057,7 @@ methods: {
             this.isEditingTitle = true;
             this.$nextTick(() => { this.$refs.titleInput.focus(); });
         },
-        openAccountingApp() {
-            if (!this.linkTripId || this.linkTripId.trim() === '') {
-                // 解除死結：未綁定時不再阻擋，而是引導建立新專案
-                if (confirm('目前尚未綁定記帳本專案。\n\n是否要前往記帳本系統建立「全新專案」？\n(建立完成後，系統會產生一組代碼，請再回此處進行綁定)')) {
-                    window.location.href = './split/index.html';
-                }
-                return;
-            }
-            const params = new URLSearchParams();
-            params.append('tripId', this.linkTripId.trim().toUpperCase());
-            window.location.href = `./split/index.html?${params.toString()}`;
-        },
-        initSortable() {
+                initSortable() {
             this.$nextTick(() => {
                 const el = this.$refs.itineraryList;
                 if (!el) return;
@@ -1379,41 +1313,7 @@ methods: {
                 if (!silent) alert('資料格式錯誤，還原失敗。');
             }
         },
-        // 新增：下拉選單選取後的確認綁定功能鍵
-        async confirmDetectedTrip() {
-            if (!this.selectedDetectedTrip) {
-                alert('請先從下拉選單選擇一個記帳專案！');
-                return;
-            }
-            this.linkTripId = this.selectedDetectedTrip;
-            alert(`已成功選取並手動綁定專案代碼：${this.linkTripId}`);
-            
-            // 重新觸發雲端身分與主揪管理者權限校驗
-            if (this.currentUserUid) {
-                try {
-                    const tripDocRef = window.doc(window.firebaseDb, "trips", this.linkTripId.trim().toUpperCase());
-                    const tripDocSnap = await window.getDoc(tripDocRef);
-                    let isMaster = false;
-                    
-                    // 🌟 重新綁定專案時，直接套用登入時探測出來的管理者狀態
-                    if (this.isSuperAdmin) {
-                        isMaster = true;
-                    }
-                    
-                    if (tripDocSnap.exists()) {
-                        window.currentTravelOwnerUid = tripDocSnap.data().ownerUid || "";
-                        if (this.currentUserUid === window.currentTravelOwnerUid) {
-                            isMaster = true;
-                        }
-                    }
-                    this.isTravelMaster = isMaster;
-                    this.isTravelGuest = !isMaster;
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-        },
-        async copySyncCode() {
+                async copySyncCode() {
             try {
                 await navigator.clipboard.writeText(this.getAllData());
                 alert('已複製完整行程代碼！您可至其他裝置貼上此代碼。');
