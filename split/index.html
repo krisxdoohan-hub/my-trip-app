@@ -4,15 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>旅遊分帳記帳本 </title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+       <link rel="manifest" href="manifest.json?v=3">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
     <script>
-        const APP_VERSION = 'v0.0.0.0.2 - 更新UI介面';
+        const APP_VERSION = 'v0.0.0.0.3 - 更新UI介面';
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker 註冊成功:', reg.scope))
-                    .catch(err => console.log('Service Worker 註冊失敗:', err));
+                // 1. 先取得手機內所有已註冊的 Service Worker
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let reg of registrations) {
+                        // 2. 如果發現這個管家是管轄上層目錄的 (非 split 專屬)，就把它強制開除
+                        if (!reg.scope.includes('/split/')) {
+                            reg.unregister();
+                            console.log('🛡️ 成功攔截並踢除父層網頁的快取干擾！');
+                        }
+                    }
+                }).then(() => {
+                    // 3. 接著再重新註冊我們 split 目錄嚴格專屬的 SW
+                    navigator.serviceWorker.register('./sw.js', { scope: './' })
+                        .then(reg => console.log('✅ 分帳系統專屬 SW 註冊成功:', reg.scope))
+                        .catch(err => console.log('❌ SW 註冊失敗:', err));
+                });
             });
         }
     </script>
